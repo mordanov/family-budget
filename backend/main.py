@@ -1,8 +1,4 @@
-from fastapi import FastAPI
+import streamlit as st
 
-app = FastAPI()
-
-@app.get("/")
-def read_root():
-    return {"status": "ok", "app": "budget-backend"}
-
+st.title("🚧 Under Construction")
+st.info("This page is coming soon. Please check back later.")
