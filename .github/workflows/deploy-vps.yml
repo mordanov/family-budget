@@ -94,7 +94,7 @@ jobs:
 
           debug_dump() {
             docker compose ps || true
-            docker compose logs --no-color --tail=200 budget-backend || true
+            docker compose logs --no-color --tail=200 budget-site || true
             docker compose logs --no-color --tail=200 nginx || true
           }
 
@@ -116,7 +116,7 @@ jobs:
           }
 
           echo "Building containers..."
-          docker compose build budget-backend nginx
+          docker compose build budget-site nginx
           docker compose up -d --remove-orphans
 
           if ! wait_for_budget_health; then
@@ -127,7 +127,7 @@ jobs:
               cd "$BUDGET_DIR"
               git reset --hard "$PREVIOUS_COMMIT"
               cd "$WEB_FOLDERS_DIR"
-              docker compose build budget-backend nginx
+              docker compose build budget-site nginx
               docker compose up -d --remove-orphans
 
               if wait_for_budget_health; then
