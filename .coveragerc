@@ -1,0 +1,8 @@
+[run]
+source = app
+
+[report]
+omit =
+    app/ui/*
+    app/main.py
+    app/db/*
