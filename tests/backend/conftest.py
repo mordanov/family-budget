@@ -3,11 +3,9 @@ Test configuration and shared fixtures.
 Requires a running PostgreSQL instance or uses a dedicated test database.
 Set TEST_DATABASE_URL environment variable to override default.
 """
-import asyncio
 import os
 from decimal import Decimal
 from datetime import datetime
-from typing import AsyncGenerator
 
 import asyncpg
 import pytest
@@ -19,14 +17,6 @@ TEST_DB_URL = os.environ.get(
     "postgresql://budget_user:password@localhost:5432/family_budget_test",
 )
 os.environ["DATABASE_URL"] = TEST_DB_URL
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create a session-scoped event loop."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -57,7 +47,6 @@ async def apply_migrations(db_pool):
 @pytest_asyncio.fixture(autouse=True)
 async def clean_tables(db_pool):
     """Truncate all tables before each test to ensure isolation."""
-    yield
     async with db_pool.acquire() as conn:
         await conn.execute("""
             TRUNCATE TABLE
@@ -70,6 +59,7 @@ async def clean_tables(db_pool):
                 users
             RESTART IDENTITY CASCADE
         """)
+    yield
 
 
 # ── Data fixtures ─────────────────────────────────────────────────────────
