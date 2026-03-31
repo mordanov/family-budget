@@ -3,6 +3,7 @@ Test configuration and shared fixtures.
 Requires a running PostgreSQL instance or uses a dedicated test database.
 Set TEST_DATABASE_URL environment variable to override default.
 """
+import asyncio
 import os
 from decimal import Decimal
 from datetime import datetime
@@ -10,6 +11,21 @@ from datetime import datetime
 import asyncpg
 import pytest
 import pytest_asyncio
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Single event loop shared across the entire test session.
+
+    pytest-asyncio 0.23 deprecated this pattern but the replacement
+    (asyncio_default_fixture_loop_scope) has a known bug in 0.23.x where
+    it doesn't propagate to async-generator fixtures. Without this fixture
+    the session-scoped db_pool and function-scoped fixtures end up on
+    different loops, causing asyncpg 'Future attached to a different loop'.
+    """
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 # Override database URL for tests before importing app modules
 TEST_DB_URL = os.environ.get(
