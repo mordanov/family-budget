@@ -109,14 +109,6 @@ docker compose ps db
 psql $DATABASE_URL -c "SELECT 1"
 ```
 
-### Port 8501 already in use
-
-```bash
-# Change port in docker-compose.yml
-ports:
-  - "127.0.0.1:8502:8501"
-```
-
 ### Migrations fail
 
 ```bash
