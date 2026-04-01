@@ -1,0 +1,41 @@
+services:
+  budget-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend:/app
+      - uploads_data:/app/uploads
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://budget_user:budget_pass@localhost:5432/budget}
+      SECRET_KEY: dev-secret-key-not-for-production
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 1440
+      ENVIRONMENT: development
+      UPLOAD_DIR: /app/uploads
+      MAX_UPLOAD_SIZE_MB: 10
+      ALLOWED_EXTENSIONS: jpg,jpeg,png,gif,webp,pdf
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost
+      DEFAULT_USER1_NAME: User 1
+      DEFAULT_USER1_EMAIL: user1@family.local
+      DEFAULT_USER1_PASSWORD: password1
+      DEFAULT_USER2_NAME: User 2
+      DEFAULT_USER2_EMAIL: user2@family.local
+      DEFAULT_USER2_PASSWORD: password2
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+
+  budget-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "5173:5173"
+    command: npm run dev -- --host
+

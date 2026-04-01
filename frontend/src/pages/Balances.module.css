@@ -1,0 +1,38 @@
+.center { display: flex; justify-content: center; padding: 60px; }
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--color-radius);
+}
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table thead tr { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.table th {
+  padding: 12px 16px; text-align: left;
+  font-size: 12px; font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.row { background: var(--color-surface); border-bottom: 1px solid var(--color-border); transition: background var(--transition); }
+.row:last-child { border-bottom: none; }
+.row:hover { background: var(--color-surface-2); }
+.table td { padding: 14px 16px; vertical-align: middle; }
+
+.period { display: flex; flex-direction: column; gap: 1px; }
+.month { font-weight: 600; font-size: 14px; }
+.year { font-size: 12px; color: var(--color-text-muted); }
+
+.mono { font-family: var(--font-mono); font-size: 14px; }
+.closing { font-weight: 700; font-size: 15px; }
+
+.adjBadge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; padding: 2px 8px; border-radius: 100px;
+  background: rgba(245,166,35,0.15); color: var(--color-warning);
+}
+
+.editForm { display: flex; flex-direction: column; gap: 12px; }
+.editPeriod { font-size: 18px; font-weight: 600; }
+.editForm label { font-size: 13px; color: var(--color-text-muted); }
+.hint { font-size: 12px; color: var(--color-text-muted); line-height: 1.5; background: var(--color-surface-2); padding: 10px 12px; border-radius: var(--color-radius-sm); }

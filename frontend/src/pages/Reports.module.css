@@ -1,0 +1,54 @@
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+.presets { display: flex; gap: 8px; flex-wrap: wrap; }
+.dateRange { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.dateRange input { width: 145px; font-size: 13px; padding: 8px 12px; }
+.dateSep { color: var(--color-text-muted); }
+
+.center { display: flex; justify-content: center; align-items: center; min-height: 200px; }
+
+.kpiRow { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
+@media (max-width:700px) { .kpiRow { grid-template-columns: 1fr; } }
+.kpi { display: flex; flex-direction: column; gap: 8px; }
+.kpiLabel { font-size: 12px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.kpiVal { font-size: 24px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px; }
+
+.chartsRow { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 20px; }
+@media (max-width:900px) { .chartsRow { grid-template-columns: 1fr; } }
+.sectionTitle { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+.barWrap { height: 240px; }
+.donutWrap { height: 240px; display: flex; justify-content: center; }
+
+.breakdownRow { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
+@media (max-width:1100px) { .breakdownRow { grid-template-columns: 1fr 1fr; } }
+@media (max-width:700px)  { .breakdownRow { grid-template-columns: 1fr; } }
+
+.catName { display: flex; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ptLabel { text-transform: capitalize; }
+
+.forecastCard { margin-bottom: 20px; }
+.forecastKpis { display: flex; gap: 32px; margin-bottom: 20px; flex-wrap: wrap; }
+.forecastKpis > div { display: flex; flex-direction: column; gap: 4px; }
+.forecastKpis span:last-child { font-size: 20px; font-weight: 700; font-family: var(--font-mono); }
+
+.forecastTable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.forecastTable th {
+  text-align: left; padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 11px; text-transform: uppercase;
+  color: var(--color-text-muted); font-weight: 600; letter-spacing: 0.5px;
+}
+.forecastTable td { padding: 10px 10px; border-bottom: 1px solid var(--color-border); }
+.source {
+  font-size: 11px; color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  padding: 2px 8px; border-radius: 100px; display: inline-block;
+}

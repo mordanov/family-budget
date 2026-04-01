@@ -1,0 +1,46 @@
+services:
+  budget-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://budget_user:budget_pass@localhost:5432/budget}
+      SECRET_KEY: ${SECRET_KEY:-change-me-budget-secret}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      UPLOAD_DIR: /app/uploads
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-10}
+      ALLOWED_EXTENSIONS: ${ALLOWED_EXTENSIONS:-jpg,jpeg,png,gif,webp,pdf}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost}
+      DEFAULT_USER1_NAME: ${DEFAULT_USER1_NAME:-User 1}
+      DEFAULT_USER1_EMAIL: ${DEFAULT_USER1_EMAIL:-user1@family.local}
+      DEFAULT_USER1_PASSWORD: ${DEFAULT_USER1_PASSWORD:-password1}
+      DEFAULT_USER2_NAME: ${DEFAULT_USER2_NAME:-User 2}
+      DEFAULT_USER2_EMAIL: ${DEFAULT_USER2_EMAIL:-user2@family.local}
+      DEFAULT_USER2_PASSWORD: ${DEFAULT_USER2_PASSWORD:-password2}
+    volumes:
+      - uploads_data:/app/uploads
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  budget-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api/v1}
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - budget-backend
+
+volumes:
+  uploads_data:

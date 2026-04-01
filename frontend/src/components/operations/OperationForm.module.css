@@ -1,0 +1,38 @@
+.form { display: flex; flex-direction: column; gap: 16px; }
+
+.typeToggle {
+  display: flex;
+  gap: 0;
+  border-radius: var(--color-radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+.typeBtn {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.type_income { background: rgba(62,207,142,0.15); color: var(--color-income); }
+.type_expense { background: rgba(245,99,58,0.15); color: var(--color-expense); }
+
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 480px) { .row { grid-template-columns: 1fr; } }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; color: var(--color-text-muted); font-weight: 500; }
+
+.recurringRow { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.checkLabel {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; cursor: pointer; white-space: nowrap;
+  padding-top: 4px;
+}
+.checkLabel input { width: auto; }
+
+.actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px; }
