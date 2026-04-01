@@ -8,6 +8,7 @@ Create Date: 2024-01-01 00:00:00.000000
 from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 revision: str = "0001_initial"
 down_revision: Union[str, None] = None
@@ -16,6 +17,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    operation_type_enum = postgresql.ENUM(
+        "income", "expense", name="operation_type", create_type=False
+    )
+    payment_type_enum = postgresql.ENUM(
+        "cash", "card", "bank_transfer", "other", name="payment_type", create_type=False
+    )
+
     # Users
     op.create_table(
         "users",
@@ -49,8 +57,28 @@ def upgrade() -> None:
     op.create_index("ix_categories_name", "categories", ["name"], unique=True)
 
     # Enums
-    op.execute("CREATE TYPE operation_type AS ENUM ('income', 'expense')")
-    op.execute("CREATE TYPE payment_type AS ENUM ('cash', 'card', 'bank_transfer', 'other')")
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'operation_type') THEN
+                CREATE TYPE operation_type AS ENUM ('income', 'expense');
+            END IF;
+        END
+        $$;
+        """
+    )
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_type') THEN
+                CREATE TYPE payment_type AS ENUM ('cash', 'card', 'bank_transfer', 'other');
+            END IF;
+        END
+        $$;
+        """
+    )
 
     # Operations
     op.create_table(
@@ -58,16 +86,8 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("amount", sa.Numeric(12, 2), nullable=False),
         sa.Column("currency", sa.String(3), nullable=False, server_default="EUR"),
-        sa.Column(
-            "type",
-            sa.Enum("income", "expense", name="operation_type", create_type=False),
-            nullable=False,
-        ),
-        sa.Column(
-            "payment_type",
-            sa.Enum("cash", "card", "bank_transfer", "other", name="payment_type", create_type=False),
-            nullable=False,
-        ),
+        sa.Column("type", operation_type_enum, nullable=False),
+        sa.Column("payment_type", payment_type_enum, nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("is_recurring", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("recurring_end_date", sa.DateTime(timezone=True), nullable=True),
