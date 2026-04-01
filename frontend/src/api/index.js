@@ -1,4 +1,5 @@
 import api from './client'
+export { operationsApi } from './operations'
 
 export const categoriesApi = {
   list: async () => {
