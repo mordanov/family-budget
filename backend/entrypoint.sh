@@ -2,6 +2,13 @@
 set -e
 
 echo "⏳ Running Alembic migrations..."
+MIGRATION_ACTION=$(python -m scripts.migration_bootstrap)
+
+if [ "$MIGRATION_ACTION" = "stamp" ]; then
+  echo "ℹ️ Legacy schema detected without alembic_version, stamping head..."
+  alembic stamp head
+fi
+
 alembic upgrade head
 
 echo "🌱 Running database seed..."
