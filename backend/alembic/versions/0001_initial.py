@@ -58,8 +58,16 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("amount", sa.Numeric(12, 2), nullable=False),
         sa.Column("currency", sa.String(3), nullable=False, server_default="EUR"),
-        sa.Column("type", sa.Enum("income", "expense", name="operation_type"), nullable=False),
-        sa.Column("payment_type", sa.Enum("cash", "card", "bank_transfer", "other", name="payment_type"), nullable=False),
+        sa.Column(
+            "type",
+            sa.Enum("income", "expense", name="operation_type", create_type=False),
+            nullable=False,
+        ),
+        sa.Column(
+            "payment_type",
+            sa.Enum("cash", "card", "bank_transfer", "other", name="payment_type", create_type=False),
+            nullable=False,
+        ),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("is_recurring", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("recurring_end_date", sa.DateTime(timezone=True), nullable=True),
