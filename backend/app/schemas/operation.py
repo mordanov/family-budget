@@ -3,6 +3,7 @@ from decimal import Decimal
 from pydantic import BaseModel, Field, condecimal
 from app.models.operation import OperationType, PaymentType
 from app.schemas.category import CategoryResponse
+from app.schemas.payment_method import PaymentMethodResponse
 from app.schemas.user import UserResponse
 
 
@@ -54,6 +55,7 @@ class OperationResponse(OperationBase):
     deleted_at: datetime | None
     category: CategoryResponse
     user: UserResponse
+    payment_method: PaymentMethodResponse
     attachments: list[AttachmentSummary] = []
 
     model_config = {"from_attributes": True}

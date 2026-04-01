@@ -73,6 +73,21 @@ export const reportsApi = {
     const { data } = await api.get('/reports/forecast', { params })
     return data
   },
+  dailyBalance: async (params = {}) => {
+    const { data } = await api.get('/reports/balance-daily', { params })
+    return data
+  },
+}
+
+export const paymentMethodsApi = {
+  list: async () => {
+    const { data } = await api.get('/payment-methods/')
+    return data
+  },
+  update: async (id, payload) => {
+    const { data } = await api.patch(`/payment-methods/${id}`, payload)
+    return data
+  },
 }
 
 export const attachmentsApi = {

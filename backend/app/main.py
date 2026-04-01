@@ -7,7 +7,7 @@ import os
 from app.core.config import settings
 from app.api.v1.router import api_router
 from app.db.session import engine
-from app.db.base import Base
+from app.db import Base
 
 
 @asynccontextmanager

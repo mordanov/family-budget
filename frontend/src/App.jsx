@@ -7,9 +7,8 @@ import DashboardPage from './pages/Dashboard'
 import OperationsPage from './pages/Operations'
 import ReportsPage   from './pages/Reports'
 import BalancesPage  from './pages/Balances'
-import CategoriesPage from './pages/Categories'
-import UsersPage     from './pages/Users'
 import NotFoundPage from './pages/NotFound'
+import SettingsPage from './pages/Settings'
 
 function RequireAuth({ children }) {
   const { token } = useAuthStore()
@@ -35,8 +34,10 @@ export default function App() {
           <Route path="operations"  element={<OperationsPage />} />
           <Route path="reports"     element={<ReportsPage />} />
           <Route path="balances"    element={<BalancesPage />} />
-          <Route path="categories"  element={<CategoriesPage />} />
-          <Route path="users"       element={<UsersPage />} />
+          <Route path="settings"    element={<SettingsPage />} />
+          <Route path="categories"  element={<Navigate to="/settings?tab=categories" replace />} />
+          <Route path="users"       element={<Navigate to="/settings?tab=users" replace />} />
+          <Route path="payment-methods" element={<Navigate to="/settings?tab=payment-methods" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />

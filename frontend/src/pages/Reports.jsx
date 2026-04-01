@@ -37,7 +37,7 @@ const COLORS = [
 ]
 
 export default function ReportsPage() {
-  const { lang } = useI18n()
+  const { lang, t } = useI18n()
   const prev = prevMonthRange()
   const [dateFrom, setDateFrom] = useState(prev.date_from.slice(0,10))
   const [dateTo, setDateTo]     = useState(prev.date_to.slice(0,10))
@@ -83,19 +83,19 @@ export default function ReportsPage() {
   }
 
   const trendLabels = (report?.monthly_trend || []).map(
-    t => `${monthName(t.month).slice(0,3)} ${t.year}`
+    t => `${monthName(t.month, lang).slice(0,3)} ${t.year}`
   )
   const trendData = {
     labels: trendLabels,
     datasets: [
       {
-        label: 'Income',
+        label: t('income'),
         data: (report?.monthly_trend || []).map(t => Number(t.total_income)),
         backgroundColor: 'rgba(62,207,142,0.75)',
         borderRadius: 5,
       },
       {
-        label: 'Expense',
+        label: t('expense'),
         data: (report?.monthly_trend || []).map(t => Number(t.total_expense)),
         backgroundColor: 'rgba(245,99,58,0.75)',
         borderRadius: 5,
@@ -105,14 +105,14 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <PageHeader title={lang === 'ru' ? 'Отчеты' : 'Reports'} subtitle={lang === 'ru' ? 'Анализ доходов и расходов' : 'Analyse your income and spending'} />
+      <PageHeader title={t('reportsTitle')} subtitle={t('reportsSubtitle')} />
 
       {/* Filter bar */}
       <Card className={styles.filterBar}>
         <div className={styles.presets}>
           {[1, 3, 6, 12].map(m => (
             <Button key={m} size="sm" variant="secondary" onClick={() => setPreset(m)}>
-              {m === 1 ? 'Last month' : `Last ${m}m`}
+                {m === 1 ? t('lastMonth') : t('lastMonths', { count: m })}
             </Button>
           ))}
         </div>
@@ -120,7 +120,7 @@ export default function ReportsPage() {
           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
           <span className={styles.dateSep}>→</span>
           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
-          <Button onClick={load} loading={loading}>Apply</Button>
+          <Button onClick={load} loading={loading}>{t('apply')}</Button>
         </div>
       </Card>
 
@@ -133,19 +133,19 @@ export default function ReportsPage() {
           {/* KPI row */}
           <div className={styles.kpiRow}>
             <Card className={styles.kpi}>
-              <span className={styles.kpiLabel}>Total Income</span>
+              <span className={styles.kpiLabel}>{t('totalIncome')}</span>
               <span className={styles.kpiVal} style={{color:'var(--color-income)'}}>
                 {formatCurrency(report.total_income)}
               </span>
             </Card>
             <Card className={styles.kpi}>
-              <span className={styles.kpiLabel}>Total Expense</span>
+              <span className={styles.kpiLabel}>{t('totalExpense')}</span>
               <span className={styles.kpiVal} style={{color:'var(--color-expense)'}}>
                 {formatCurrency(report.total_expense)}
               </span>
             </Card>
             <Card className={styles.kpi}>
-              <span className={styles.kpiLabel}>Net Balance</span>
+              <span className={styles.kpiLabel}>{t('netBalance')}</span>
               <span className={styles.kpiVal} style={{
                 color: Number(report.net_balance) >= 0
                   ? 'var(--color-income)' : 'var(--color-expense)'
@@ -158,17 +158,17 @@ export default function ReportsPage() {
           {/* Charts row */}
           <div className={styles.chartsRow}>
             <Card>
-              <h3 className={styles.sectionTitle}>Monthly Trend</h3>
+              <h3 className={styles.sectionTitle}>{t('monthlyTrend')}</h3>
               {trendLabels.length > 0
                 ? <div className={styles.barWrap}><Bar data={trendData} options={BAR_OPTS} /></div>
-                : <EmptyState icon="📊" title="No data for this period" />
+                : <EmptyState icon="📊" title={t('noDataForPeriod')} />
               }
             </Card>
             <Card>
-              <h3 className={styles.sectionTitle}>Expenses by Category</h3>
+              <h3 className={styles.sectionTitle}>{t('expensesByCategory')}</h3>
               {expenseByCategory.length > 0
                 ? <div className={styles.donutWrap}><Doughnut data={donutData} options={DONUT_OPTS} /></div>
-                : <EmptyState icon="🏷" title="No expense data" />
+                : <EmptyState icon="🏷" title={t('noExpenseData')} />
               }
             </Card>
           </div>
@@ -176,9 +176,9 @@ export default function ReportsPage() {
           {/* Breakdown tables */}
           <div className={styles.breakdownRow}>
             <BreakdownTable
-              title="By Category"
+              title={t('byCategory')}
               rows={report.by_category}
-              columns={['Category','Income','Expense','Count']}
+              columns={[t('category'), t('income'), t('expense'), t('count')]}
               renderRow={r => [
                 <span key="n" className={styles.catName}>
                   <span className={styles.dot} style={{background: r.category_color || '#9E9E9E'}} />
@@ -190,9 +190,9 @@ export default function ReportsPage() {
               ]}
             />
             <BreakdownTable
-              title="By User"
+              title={t('byUser')}
               rows={report.by_user}
-              columns={['User','Income','Expense','Count']}
+              columns={[t('user'), t('income'), t('expense'), t('count')]}
               renderRow={r => [
                 r.user_name,
                 <span key="i" className="amount-income">{formatCurrency(r.total_income)}</span>,
@@ -201,11 +201,11 @@ export default function ReportsPage() {
               ]}
             />
             <BreakdownTable
-              title="By Payment Type"
+              title={t('byPaymentType')}
               rows={report.by_payment_type}
-              columns={['Payment','Income','Expense','Count']}
+              columns={[t('payment'), t('income'), t('expense'), t('count')]}
               renderRow={r => [
-                <span key="p" className={styles.ptLabel}>{r.payment_type.replace('_',' ')}</span>,
+                <span key="p" className={styles.ptLabel}>{r.payment_method_name || r.payment_type.replace('_',' ')}</span>,
                 <span key="i" className="amount-income">{formatCurrency(r.total_income)}</span>,
                 <span key="e" className="amount-expense">{formatCurrency(r.total_expense)}</span>,
                 r.count,
@@ -217,19 +217,19 @@ export default function ReportsPage() {
           {forecast && (
             <Card className={styles.forecastCard}>
               <h3 className={styles.sectionTitle}>
-                Next Month Forecast — {monthName(forecast.month)} {forecast.year}
+                {t('nextMonthForecast')} — {monthName(forecast.month, lang)} {forecast.year}
               </h3>
               <div className={styles.forecastKpis}>
                 <div>
-                  <span className={styles.kpiLabel}>Est. Income</span>
+                  <span className={styles.kpiLabel}>{t('estIncome')}</span>
                   <span className="amount-income">{formatCurrency(forecast.total_estimated_income)}</span>
                 </div>
                 <div>
-                  <span className={styles.kpiLabel}>Est. Expense</span>
+                  <span className={styles.kpiLabel}>{t('estExpense')}</span>
                   <span className="amount-expense">{formatCurrency(forecast.total_estimated_expense)}</span>
                 </div>
                 <div>
-                  <span className={styles.kpiLabel}>Est. Net</span>
+                  <span className={styles.kpiLabel}>{t('estNet')}</span>
                   <span style={{color: Number(forecast.estimated_net)>=0?'var(--color-income)':'var(--color-expense)'}}>
                     {formatCurrency(forecast.estimated_net)}
                   </span>
@@ -238,15 +238,15 @@ export default function ReportsPage() {
               <table className={styles.forecastTable}>
                 <thead>
                   <tr>
-                    <th>Category</th><th>Type</th><th>Source</th><th>Estimated</th>
+                    <th>{t('category')}</th><th>{t('type')}</th><th>{t('source')}</th><th>{t('estimated')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {forecast.items.map((item, i) => (
                     <tr key={i}>
                       <td>{item.category_name}</td>
-                      <td><span className={`badge ${item.type==='income'?'badge-income':'badge-expense'}`}>{item.type}</span></td>
-                      <td className={styles.source}>{item.source}</td>
+                      <td><span className={`badge ${item.type==='income'?'badge-income':'badge-expense'}`}>{item.type === 'income' ? t('income') : t('expense')}</span></td>
+                      <td className={styles.source}>{item.source === 'recurring' ? t('sourceRecurring') : t('sourceAverage')}</td>
                       <td className={item.type==='income'?'amount-income':'amount-expense'}>
                         {item.type==='income'?'+':'-'}{formatCurrency(item.estimated_amount)}
                       </td>
@@ -263,6 +263,7 @@ export default function ReportsPage() {
 }
 
 function BreakdownTable({ title, rows, columns, renderRow }) {
+  const { t } = useI18n()
   return (
     <Card>
       <h3 style={{fontSize:'14px',fontWeight:600,marginBottom:'14px'}}>{title}</h3>
@@ -290,7 +291,7 @@ function BreakdownTable({ title, rows, columns, renderRow }) {
           </tbody>
         </table>
       ) : (
-        <EmptyState icon="📋" title="No data" />
+        <EmptyState icon="📋" title={t('noData')} />
       )}
     </Card>
   )

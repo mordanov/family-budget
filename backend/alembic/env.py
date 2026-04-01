@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 # Import all models so Alembic can detect them
-from app.db import Base, User, Category, Operation, Attachment, MonthlyBalance  # noqa
+from app.db import Base, User, Category, Operation, PaymentMethod, Attachment, MonthlyBalance  # noqa
 from app.core.config import settings
 
 config = context.config

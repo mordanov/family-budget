@@ -1,10 +1,11 @@
 from datetime import datetime
 from decimal import Decimal
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, case
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.operation import Operation, OperationType
 from app.models.category import Category
+from app.models.payment_method import PaymentMethod
 from app.models.user import User
 from app.repositories.base import BaseRepository
 
@@ -20,6 +21,7 @@ class OperationRepository(BaseRepository[Operation]):
             .options(
                 selectinload(Operation.category),
                 selectinload(Operation.user),
+                selectinload(Operation.payment_method),
                 selectinload(Operation.attachments),
             )
         )
@@ -161,9 +163,51 @@ class OperationRepository(BaseRepository[Operation]):
         q = (
             select(
                 Operation.payment_type,
+                PaymentMethod.name.label("payment_method_name"),
                 Operation.type,
                 func.sum(Operation.amount).label("total"),
                 func.count(Operation.id).label("count"),
+            )
+            .join(PaymentMethod, Operation.payment_method_id == PaymentMethod.id)
+            .where(
+                and_(
+                    Operation.deleted_at == None,
+                    Operation.operation_date >= date_from,
+                    Operation.operation_date <= date_to,
+                )
+            )
+            .group_by(Operation.payment_type, PaymentMethod.name, Operation.type)
+        )
+        result = await self.db.execute(q)
+        return result.all()
+
+    async def get_balance_before(self, date_from: datetime) -> Decimal:
+        q = (
+            select(
+                func.coalesce(
+                    func.sum(
+                        (Operation.amount)
+                        * case((Operation.type == OperationType.income, 1), else_=-1)
+                    ),
+                    0,
+                )
+            )
+            .where(
+                and_(
+                    Operation.deleted_at == None,
+                    Operation.operation_date < date_from,
+                )
+            )
+        )
+        result = await self.db.execute(q)
+        return Decimal(result.scalar_one() or 0)
+
+    async def get_daily_net(self, date_from: datetime, date_to: datetime) -> list:
+        q = (
+            select(
+                func.date(Operation.operation_date).label("day"),
+                Operation.type,
+                func.sum(Operation.amount).label("total"),
             )
             .where(
                 and_(
@@ -172,7 +216,8 @@ class OperationRepository(BaseRepository[Operation]):
                     Operation.operation_date <= date_to,
                 )
             )
-            .group_by(Operation.payment_type, Operation.type)
+            .group_by(func.date(Operation.operation_date), Operation.type)
+            .order_by(func.date(Operation.operation_date))
         )
         result = await self.db.execute(q)
         return result.all()

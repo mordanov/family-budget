@@ -7,7 +7,7 @@ import { formatCurrency, monthName, apiError } from '../utils/index'
 import styles from './Balances.module.css'
 
 export default function BalancesPage() {
-  const { lang } = useI18n()
+  const { lang, t } = useI18n()
   const [balances, setBalances] = useState([])
   const [loading, setLoading]   = useState(true)
   const [editing, setEditing]   = useState(null)
@@ -41,25 +41,25 @@ export default function BalancesPage() {
 
   return (
     <div>
-      <PageHeader title={lang === 'ru' ? 'Месячные балансы' : 'Monthly Balances'} subtitle={lang === 'ru' ? 'Сводка балансов и редактируемые начальные остатки' : 'Debit & credit summaries, editable opening balances'} />
+      <PageHeader title={t('monthlyBalancesTitle')} subtitle={t('monthlyBalancesSubtitle')} />
 
       {error && <Alert type="error">{error}</Alert>}
 
       {loading ? (
         <div className={styles.center}><Spinner size={28} /></div>
       ) : balances.length === 0 ? (
-        <EmptyState icon="⚖" title={lang === 'ru' ? 'Записей баланса пока нет' : 'No balance records yet'} description={lang === 'ru' ? 'Балансы создаются автоматически после добавления операций.' : 'Balances are created automatically when you add operations.'} />
+        <EmptyState icon="⚖" title={t('noBalanceRecords')} description={t('balancesAutoHint')} />
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Period</th>
-                <th>Opening Balance</th>
-                <th>Total Income</th>
-                <th>Total Expense</th>
-                <th>Closing Balance</th>
-                <th>Adjusted</th>
+                <th>{t('period')}</th>
+                <th>{t('openingBalance')}</th>
+                <th>{t('totalIncome')}</th>
+                <th>{t('totalExpense')}</th>
+                <th>{t('closingBalance')}</th>
+                <th>{t('adjusted')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -69,7 +69,7 @@ export default function BalancesPage() {
                 return (
                   <tr key={b.id} className={styles.row}>
                     <td className={styles.period}>
-                      <span className={styles.month}>{monthName(b.month)}</span>
+                      <span className={styles.month}>{monthName(b.month, lang)}</span>
                       <span className={styles.year}>{b.year}</span>
                     </td>
                     <td className={styles.mono}>{formatCurrency(b.opening_balance)}</td>
@@ -81,12 +81,12 @@ export default function BalancesPage() {
                     </td>
                     <td>
                       {b.is_manually_adjusted && (
-                        <span className={styles.adjBadge}>✎ manual</span>
+                        <span className={styles.adjBadge}>✎ {t('manual')}</span>
                       )}
                     </td>
                     <td>
                       <Button size="sm" variant="secondary" onClick={() => openEdit(b)}>
-                        Edit Opening
+                        {t('editOpening')}
                       </Button>
                     </td>
                   </tr>
@@ -97,20 +97,20 @@ export default function BalancesPage() {
         </div>
       )}
 
-      <Modal open={!!editing} onClose={() => setEditing(null)} title="Set Opening Balance" size="sm"
+      <Modal open={!!editing} onClose={() => setEditing(null)} title={t('setOpeningBalance')} size="sm"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setEditing(null)}>Cancel</Button>
-            <Button onClick={handleSave} loading={saving}>Save</Button>
+            <Button variant="secondary" onClick={() => setEditing(null)}>{t('cancel')}</Button>
+            <Button onClick={handleSave} loading={saving}>{t('save')}</Button>
           </>
         }
       >
         {editing && (
           <div className={styles.editForm}>
             <p className={styles.editPeriod}>
-              {monthName(editing.month)} {editing.year}
+              {monthName(editing.month, lang)} {editing.year}
             </p>
-            <label>Opening Balance (EUR)</label>
+            <label>{t('openingBalanceEur')}</label>
             <input
               type="number"
               step="0.01"
@@ -118,10 +118,7 @@ export default function BalancesPage() {
               onChange={e => setInputVal(e.target.value)}
               autoFocus
             />
-            <p className={styles.hint}>
-              This overrides the auto-calculated opening balance for this month.
-              All subsequent months will be recalculated from this value.
-            </p>
+            <p className={styles.hint}>{t('openingBalanceHint')}</p>
           </div>
         )}
       </Modal>

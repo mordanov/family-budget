@@ -56,10 +56,12 @@ class Operation(Base):
     # Foreign keys
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False, index=True)
+    payment_method_id: Mapped[int] = mapped_column(ForeignKey("payment_methods.id"), nullable=False, index=True)
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="operations")
     category: Mapped["Category"] = relationship("Category", back_populates="operations")
+    payment_method: Mapped["PaymentMethod"] = relationship("PaymentMethod", back_populates="operations")
     attachments: Mapped[list["Attachment"]] = relationship(
         "Attachment", back_populates="operation", cascade="all, delete-orphan"
     )

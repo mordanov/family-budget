@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.report import ReportFilter, ReportResponse, ForecastResponse
+from app.schemas.report import ReportFilter, ReportResponse, ForecastResponse, DailyBalanceResponse
 from app.services.report_service import ReportService
 
 
@@ -58,3 +58,16 @@ async def get_forecast(
         else:
             year, month = today.year, today.month + 1
     return await ReportService(db).get_forecast(year, month)
+
+
+@router.get("/balance-daily", response_model=DailyBalanceResponse)
+async def get_balance_daily(
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    if not date_from or not date_to:
+        date_from, date_to = _prev_month_range()
+    return await ReportService(db).get_daily_balance(date_from, date_to)
+

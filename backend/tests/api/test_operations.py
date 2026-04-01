@@ -22,7 +22,7 @@ def make_op(user_id: int, category_id: int, **kwargs):
 async def test_create_operation(client, auth_headers, test_user, test_category):
     payload = make_op(test_user.id, test_category.id)
     resp = await client.post("/api/v1/operations/", json=payload, headers=auth_headers)
-    assert resp.status_code == 201
+    assert resp.status_code == 201, f"Got {resp.status_code}: {resp.json()}"
     data = resp.json()
     assert data["amount"] == "150.00"
     assert data["type"] == "expense"

@@ -76,7 +76,7 @@ export default function OperationsPage() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this operation?')) return
+    if (!confirm(t('confirmDeleteOperation'))) return
     try {
       await operationsApi.delete(id)
       load()
@@ -101,8 +101,8 @@ export default function OperationsPage() {
       <Card className={styles.filters}>
         <select onChange={(e) => setFilter('type', e.target.value)} defaultValue="">
           <option value="">{t('allTypes')}</option>
-          <option value="income">{lang === 'ru' ? 'Доход' : 'Income'}</option>
-          <option value="expense">{lang === 'ru' ? 'Расход' : 'Expense'}</option>
+          <option value="income">{t('income')}</option>
+          <option value="expense">{t('expense')}</option>
         </select>
         <select onChange={(e) => setFilter('category_id', e.target.value)} defaultValue="">
           <option value="">{t('allCategories')}</option>
@@ -114,19 +114,19 @@ export default function OperationsPage() {
         </select>
         <select onChange={(e) => setFilter('payment_type', e.target.value)} defaultValue="">
           <option value="">{t('allPaymentTypes')}</option>
-          <option value="cash">{lang === 'ru' ? 'Наличные' : 'Cash'}</option>
-          <option value="card">Card</option>
-          <option value="bank_transfer">{lang === 'ru' ? 'Банковский перевод' : 'Bank Transfer'}</option>
-          <option value="other">{lang === 'ru' ? 'Другое' : 'Other'}</option>
+          <option value="cash">{t('paymentCash')}</option>
+          <option value="card">{t('paymentCard')}</option>
+          <option value="bank_transfer">{t('paymentBankTransfer')}</option>
+          <option value="other">{t('paymentOther')}</option>
         </select>
         <input
           type="date"
-          placeholder="From"
+          placeholder={t('dateFrom')}
           onChange={(e) => setFilter('date_from', e.target.value ? new Date(e.target.value).toISOString() : undefined)}
         />
         <input
           type="date"
-          placeholder="To"
+          placeholder={t('dateTo')}
           onChange={(e) => setFilter('date_to', e.target.value ? new Date(e.target.value + 'T23:59:59').toISOString() : undefined)}
         />
       </Card>
@@ -141,13 +141,13 @@ export default function OperationsPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>{lang === 'ru' ? 'Дата' : 'Date'}</th>
-                <th>{lang === 'ru' ? 'Тип' : 'Type'}</th>
-                <th>{lang === 'ru' ? 'Сумма' : 'Amount'}</th>
-                <th>{lang === 'ru' ? 'Категория' : 'Category'}</th>
-                <th>{lang === 'ru' ? 'Пользователь' : 'User'}</th>
-                <th>{lang === 'ru' ? 'Оплата' : 'Payment'}</th>
-                <th>{lang === 'ru' ? 'Описание' : 'Description'}</th>
+                <th>{t('tableDate')}</th>
+                <th>{t('tableType')}</th>
+                <th>{t('tableAmount')}</th>
+                <th>{t('tableCategory')}</th>
+                <th>{t('tableUser')}</th>
+                <th>{t('tablePayment')}</th>
+                <th>{t('tableDescription')}</th>
                 <th>{t('attachments')}</th>
                 <th></th>
               </tr>
@@ -155,28 +155,28 @@ export default function OperationsPage() {
             <tbody>
               {data.items.map((op) => (
                 <tr key={op.id} className={styles.row}>
-                  <td data-label={lang === 'ru' ? 'Дата' : 'Date'} className={styles.date}>{formatDateTime(op.operation_date)}</td>
-                  <td data-label={lang === 'ru' ? 'Тип' : 'Type'}><Badge type={op.type} /></td>
-                  <td data-label={lang === 'ru' ? 'Сумма' : 'Amount'} className={`${styles.amount} ${op.type === 'income' ? 'amount-income' : 'amount-expense'}`}>
+                  <td data-label={t('tableDate')} className={styles.date}>{formatDateTime(op.operation_date)}</td>
+                  <td data-label={t('tableType')} className={styles.typeCell}><Badge type={op.type} /></td>
+                  <td data-label={t('tableAmount')} className={`${styles.amount} ${op.type === 'income' ? 'amount-income' : 'amount-expense'}`}>
                     {op.type === 'income' ? '+' : '-'}{formatCurrency(op.amount)}
                     {op.is_recurring && <span className={styles.recurBadge}>↻</span>}
                   </td>
-                  <td data-label={lang === 'ru' ? 'Категория' : 'Category'}>
+                  <td data-label={t('tableCategory')}>
                     <span className={styles.catChip}>
                       <span style={{ background: op.category?.color || '#9E9E9E' }} className={styles.catDot} />
                       {op.category?.name}
                     </span>
                   </td>
-                  <td data-label={lang === 'ru' ? 'Пользователь' : 'User'}>{op.user?.name}</td>
-                  <td data-label={lang === 'ru' ? 'Оплата' : 'Payment'} className={styles.muted}>{op.payment_type?.replace('_', ' ')}</td>
-                  <td data-label={lang === 'ru' ? 'Описание' : 'Description'} className={styles.desc}>{op.description || '—'}</td>
+                  <td data-label={t('tableUser')}>{op.user?.name}</td>
+                  <td data-label={t('tablePayment')} className={styles.muted}>{op.payment_method?.name || op.payment_type?.replace('_', ' ')}</td>
+                  <td data-label={t('tableDescription')} className={styles.desc}>{op.description || '—'}</td>
                   <td data-label={t('attachments')} className={styles.attachmentsCell}>
                     {op.attachments?.length || 0}
                   </td>
-                  <td data-label={lang === 'ru' ? 'Действия' : 'Actions'}>
+                  <td data-label={t('tableActions')}>
                     <div className={styles.actions}>
-                      <Button size="sm" variant="ghost" onClick={() => openEdit(op)}>{lang === 'ru' ? 'Изменить' : 'Edit'}</Button>
-                      <Button size="sm" variant="danger" onClick={() => handleDelete(op.id)}>{lang === 'ru' ? 'Удалить' : 'Delete'}</Button>
+                      <Button size="sm" variant="ghost" onClick={() => openEdit(op)}>{t('edit')}</Button>
+                      <Button size="sm" variant="danger" onClick={() => handleDelete(op.id)}>{t('delete')}</Button>
                     </div>
                   </td>
                 </tr>
@@ -191,12 +191,12 @@ export default function OperationsPage() {
         <div className={styles.pagination}>
           <Button size="sm" variant="secondary" disabled={data.page <= 1}
             onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}>
-            {lang === 'ru' ? '← Назад' : '← Prev'}
+            {`← ${t('prev')}`}
           </Button>
-          <span className={styles.pageInfo}>{lang === 'ru' ? `Страница ${data.page} из ${data.pages}` : `Page ${data.page} of ${data.pages}`}</span>
+          <span className={styles.pageInfo}>{t('pageOf', { page: data.page, pages: data.pages })}</span>
           <Button size="sm" variant="secondary" disabled={data.page >= data.pages}
             onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}>
-            {lang === 'ru' ? 'Далее →' : 'Next →'}
+            {`${t('next')} →`}
           </Button>
         </div>
       )}
@@ -205,7 +205,7 @@ export default function OperationsPage() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? (lang === 'ru' ? 'Изменить операцию' : 'Edit Operation') : (lang === 'ru' ? 'Новая операция' : 'New Operation')}
+        title={editing ? t('operationsEditTitle') : t('operationsNewTitle')}
         size="lg"
       >
         <OperationForm
@@ -218,9 +218,7 @@ export default function OperationsPage() {
           <AttachmentManager operationId={editing.id} />
         ) : (
           <p className={styles.attachmentsHint}>
-            {lang === 'ru'
-              ? 'Сохраните операцию, чтобы добавить фото, снимок камеры или PDF.'
-              : 'Save the operation first to add camera photos, images or PDF files.'}
+            {t('saveOperationFirst')}
           </p>
         )}
       </Modal>

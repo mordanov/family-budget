@@ -7,7 +7,7 @@ import { Bar, Line } from 'react-chartjs-2'
 import { balancesApi, reportsApi } from '../api/index'
 import { Card, Spinner, PageHeader, EmptyState } from '../components/ui/index'
 import { useI18n } from '../i18n'
-import { formatCurrency, prevMonthRange, monthName } from '../utils/index'
+import { formatCurrency, currentMonthRange, monthName } from '../utils/index'
 import styles from './Dashboard.module.css'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler)
@@ -23,22 +23,25 @@ const CHART_OPTS = {
 }
 
 export default function DashboardPage() {
-  const { lang } = useI18n()
+  const { lang, t } = useI18n()
   const [balances, setBalances] = useState([])
   const [report, setReport] = useState(null)
   const [forecast, setForecast] = useState(null)
+  const [daily, setDaily] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const range = prevMonthRange()
+    const range = currentMonthRange()
     Promise.all([
       balancesApi.list(),
       reportsApi.get(range),
       reportsApi.forecast(),
-    ]).then(([b, r, f]) => {
+      reportsApi.dailyBalance(range),
+    ]).then(([b, r, f, d]) => {
       setBalances(b.slice(0, 6))
       setReport(r)
       setForecast(f)
+      setDaily(d.items || [])
     }).finally(() => setLoading(false))
   }, [])
 
@@ -49,19 +52,19 @@ export default function DashboardPage() {
   const latest = balances[0]
 
   const trendLabels = (report?.monthly_trend || []).map(
-    (t) => `${monthName(t.month).slice(0, 3)} ${t.year}`
+    (tItem) => `${monthName(tItem.month, lang).slice(0, 3)} ${tItem.year}`
   )
   const trendData = {
     labels: trendLabels,
     datasets: [
       {
-        label: 'Income',
+        label: t('income'),
         data: (report?.monthly_trend || []).map((t) => Number(t.total_income)),
         backgroundColor: 'rgba(62,207,142,0.7)',
         borderRadius: 6,
       },
       {
-        label: 'Expense',
+        label: t('expense'),
         data: (report?.monthly_trend || []).map((t) => Number(t.total_expense)),
         backgroundColor: 'rgba(245,99,58,0.7)',
         borderRadius: 6,
@@ -70,10 +73,10 @@ export default function DashboardPage() {
   }
 
   const balanceChartData = {
-    labels: [...balances].reverse().map((b) => `${monthName(b.month).slice(0, 3)} ${b.year}`),
+    labels: daily.map((d) => d.date.slice(5)),
     datasets: [{
-      label: 'Closing Balance',
-      data: [...balances].reverse().map((b) => Number(b.closing_balance)),
+      label: t('closingBalance'),
+      data: daily.map((d) => Number(d.balance)),
       borderColor: '#6c8fff',
       backgroundColor: 'rgba(108,143,255,0.1)',
       fill: true,
@@ -84,31 +87,31 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <PageHeader title={lang === 'ru' ? 'Дашборд' : 'Dashboard'} subtitle={lang === 'ru' ? 'Обзор семейных финансов' : 'Overview of your family finances'} />
+      <PageHeader title={t('dashboardTitle')} subtitle={t('dashboardSubtitle')} />
 
       {/* KPI row */}
       <div className={styles.kpiGrid}>
-        <KpiCard label="Current Balance" value={formatCurrency(latest?.closing_balance || 0)} accent="primary" />
-        <KpiCard label="Last Month Income" value={formatCurrency(report?.total_income || 0)} accent="income" />
-        <KpiCard label="Last Month Expense" value={formatCurrency(report?.total_expense || 0)} accent="expense" />
-        <KpiCard label="Net Last Month" value={formatCurrency(report?.net_balance || 0)}
+        <KpiCard label={t('currentBalance')} value={formatCurrency(latest?.closing_balance || 0)} accent="primary" />
+        <KpiCard label={t('monthIncome')} value={formatCurrency(report?.total_income || 0)} accent="income" />
+        <KpiCard label={t('monthExpense')} value={formatCurrency(report?.total_expense || 0)} accent="expense" />
+        <KpiCard label={t('monthNet')} value={formatCurrency(report?.net_balance || 0)}
           accent={Number(report?.net_balance || 0) >= 0 ? 'income' : 'expense'} />
       </div>
 
       {/* Charts row */}
       <div className={styles.chartsRow}>
         <Card className={styles.chartCard}>
-          <h3 className={styles.chartTitle}>Income vs Expense Trend</h3>
+          <h3 className={styles.chartTitle}>{t('incomeVsExpenseTrend')}</h3>
           {trendLabels.length > 0
             ? <div className={styles.chartWrap}><Bar data={trendData} options={CHART_OPTS} /></div>
-            : <EmptyState icon="📊" title="No trend data yet" />
+            : <EmptyState icon="📊" title={t('noTrendDataYet')} />
           }
         </Card>
         <Card className={styles.chartCard}>
-          <h3 className={styles.chartTitle}>Balance Over Time</h3>
-          {balances.length > 0
+          <h3 className={styles.chartTitle}>{t('balanceOverTime')}</h3>
+          {daily.length > 0
             ? <div className={styles.chartWrap}><Line data={balanceChartData} options={CHART_OPTS} /></div>
-            : <EmptyState icon="📈" title="No balance history yet" />
+            : <EmptyState icon="📈" title={t('noBalanceHistoryYet')} />
           }
         </Card>
       </div>
@@ -118,7 +121,7 @@ export default function DashboardPage() {
         {forecast && (
           <Card>
             <h3 className={styles.chartTitle}>
-              Next Month Forecast — {monthName(forecast.month)} {forecast.year}
+              {t('nextMonthForecast')} — {monthName(forecast.month, lang)} {forecast.year}
             </h3>
             <div className={styles.forecastSummary}>
               <span className={styles.forecastIncome}>
@@ -128,14 +131,14 @@ export default function DashboardPage() {
                 -{formatCurrency(forecast.total_estimated_expense)}
               </span>
               <span className={`${styles.forecastNet} ${Number(forecast.estimated_net) >= 0 ? styles.pos : styles.neg}`}>
-                Net: {formatCurrency(forecast.estimated_net)}
+                {t('net')}: {formatCurrency(forecast.estimated_net)}
               </span>
             </div>
             <div className={styles.forecastList}>
               {forecast.items.slice(0, 8).map((item, i) => (
                 <div key={i} className={styles.forecastItem}>
                   <span className={styles.forecastCat}>{item.category_name}</span>
-                  <span className={styles.forecastSource}>{item.source}</span>
+                  <span className={styles.forecastSource}>{item.source === 'recurring' ? t('sourceRecurring') : t('sourceAverage')}</span>
                   <span className={item.type === 'income' ? 'amount-income' : 'amount-expense'}>
                     {item.type === 'income' ? '+' : '-'}{formatCurrency(item.estimated_amount)}
                   </span>
@@ -147,7 +150,7 @@ export default function DashboardPage() {
 
         {report && (
           <Card>
-            <h3 className={styles.chartTitle}>Last Month by Category</h3>
+            <h3 className={styles.chartTitle}>{t('currentMonthByCategory')}</h3>
             <div className={styles.catList}>
               {(report.by_category || []).slice(0, 8).map((cat) => (
                 <div key={cat.category_id} className={styles.catRow}>
@@ -161,7 +164,7 @@ export default function DashboardPage() {
                 </div>
               ))}
               {!report.by_category?.length && (
-                <EmptyState icon="🏷" title="No category data" />
+                <EmptyState icon="🏷" title={t('noCategoryData')} />
               )}
             </div>
           </Card>

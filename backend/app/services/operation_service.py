@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.operation import Operation
 from app.repositories.operation_repository import OperationRepository
 from app.repositories.category_repository import CategoryRepository
+from app.repositories.payment_method_repository import PaymentMethodRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.operation import (
     OperationCreate, OperationUpdate, OperationResponse,
@@ -16,8 +17,25 @@ class OperationService:
     def __init__(self, db: AsyncSession):
         self.repo = OperationRepository(db)
         self.cat_repo = CategoryRepository(db)
+        self.pm_repo = PaymentMethodRepository(db)
         self.user_repo = UserRepository(db)
         self.balance_service = BalanceService(db)
+
+    async def _resolve_payment_method_id(self, payment_type: str | None, fallback: int | None = None) -> int:
+        await self.pm_repo.ensure_defaults()
+        if payment_type:
+            # Get the actual enum value
+            payment_type_str = payment_type.value if hasattr(payment_type, 'value') else str(payment_type)
+            pm = await self.pm_repo.get_by_key(payment_type_str)
+            if not pm:
+                raise HTTPException(status_code=400, detail="Payment method not found")
+            return pm.id
+        if fallback is not None:
+            return fallback
+        card = await self.pm_repo.get_by_key("card")
+        if not card:
+            raise HTTPException(status_code=400, detail="Payment method not found")
+        return card.id
 
     async def _validate_refs(self, category_id: int, user_id: int):
         cat = await self.cat_repo.get_by_id(category_id)
@@ -57,7 +75,11 @@ class OperationService:
 
     async def create(self, data: OperationCreate) -> OperationResponse:
         await self._validate_refs(data.category_id, data.user_id)
-        op = Operation(**data.model_dump())
+        payload = data.model_dump()
+        payload["payment_method_id"] = await self._resolve_payment_method_id(
+            payload.pop("payment_type")
+        )
+        op = Operation(**payload)
         op = await self.repo.create(op)
         op = await self.repo.get_by_id_with_relations(op.id)
         await self.balance_service.recalculate_month(
@@ -74,7 +96,13 @@ class OperationService:
         if data.user_id:
             await self._validate_refs(op.category_id, data.user_id)
         old_year, old_month = op.operation_date.year, op.operation_date.month
-        for field, value in data.model_dump(exclude_none=True).items():
+        payload = data.model_dump(exclude_none=True)
+        if "payment_type" in payload:
+            payload["payment_method_id"] = await self._resolve_payment_method_id(
+                payload.pop("payment_type"),
+                fallback=op.payment_method_id,
+            )
+        for field, value in payload.items():
             setattr(op, field, value)
         await self.repo.db.flush()
         await self.repo.db.refresh(op)

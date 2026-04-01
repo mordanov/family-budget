@@ -50,6 +50,7 @@ class UserSummary(BaseModel):
 
 class PaymentTypeSummary(BaseModel):
     payment_type: str
+    payment_method_name: str | None = None
     total_income: Decimal
     total_expense: Decimal
     count: int
@@ -90,3 +91,13 @@ class ForecastResponse(BaseModel):
     total_estimated_income: Decimal
     total_estimated_expense: Decimal
     estimated_net: Decimal
+
+
+class DailyBalanceItem(BaseModel):
+    date: str
+    balance: Decimal
+
+
+class DailyBalanceResponse(BaseModel):
+    items: list[DailyBalanceItem]
+

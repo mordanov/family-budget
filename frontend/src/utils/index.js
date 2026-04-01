@@ -23,8 +23,13 @@ export const prevMonthRange = () => {
   }
 }
 
-export const monthName = (month) =>
-  new Date(2000, month - 1, 1).toLocaleString('default', { month: 'long' })
+export const currentMonthRange = () => ({
+  date_from: startOfMonth(new Date()).toISOString(),
+  date_to: endOfMonth(new Date()).toISOString(),
+})
+
+export const monthName = (month, lang = 'en') =>
+  new Date(2000, month - 1, 1).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US', { month: 'long' })
 
 export const PAYMENT_TYPES = [
   { value: 'cash', label: 'Cash' },

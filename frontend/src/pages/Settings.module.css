@@ -1,0 +1,4 @@
+.tabsCard { margin-bottom: 14px; padding: 12px; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.content { margin-top: 8px; }
+

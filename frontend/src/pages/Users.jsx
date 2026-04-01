@@ -9,7 +9,7 @@ import styles from './Users.module.css'
 const EMPTY = { name: '', email: '', password: '' }
 
 export default function UsersPage() {
-  const { lang } = useI18n()
+  const { t } = useI18n()
   const [users, setUsers]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [modalOpen, setModal]   = useState(false)
@@ -43,7 +43,7 @@ export default function UsersPage() {
   }
 
   const handleDeactivate = async (id) => {
-    if (!confirm('Deactivate this user? They will no longer be able to log in.')) return
+    if (!confirm(t('confirmDeactivateUser'))) return
     try { await usersApi.delete(id); load() }
     catch (e) { setError(apiError(e)) }
   }
@@ -53,9 +53,9 @@ export default function UsersPage() {
   return (
     <div>
       <PageHeader
-        title={lang === 'ru' ? 'Пользователи' : 'Users'}
-        subtitle={lang === 'ru' ? 'Управление членами семьи' : 'Manage family members'}
-        action={<Button onClick={openCreate}>{lang === 'ru' ? '+ Новый пользователь' : '+ New User'}</Button>}
+        title={t('usersTitle')}
+        subtitle={t('usersSubtitle')}
+        action={<Button onClick={openCreate}>{t('newUser')}</Button>}
       />
 
       {error && <Alert type="error">{error}</Alert>}
@@ -63,7 +63,7 @@ export default function UsersPage() {
       {loading ? (
         <div className={styles.center}><Spinner size={28} /></div>
       ) : users.length === 0 ? (
-        <EmptyState icon="👤" title="No users found" />
+        <EmptyState icon="👤" title={t('noUsers')} />
       ) : (
         <div className={styles.grid}>
           {users.map(u => (
@@ -72,16 +72,16 @@ export default function UsersPage() {
               <div className={styles.info}>
                 <span className={styles.name}>{u.name}</span>
                 <span className={styles.email}>{u.email}</span>
-                <span className={styles.since}>Since {formatDate(u.created_at)}</span>
+                <span className={styles.since}>{t('since', { date: formatDate(u.created_at) })}</span>
               </div>
               <div className={`${styles.status} ${u.is_active ? styles.active : styles.inactive}`}>
-                {u.is_active ? 'Active' : 'Inactive'}
+                {u.is_active ? t('active') : t('inactive')}
               </div>
               <div className={styles.actions}>
-                <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>Edit</Button>
+                <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>{t('edit')}</Button>
                 {u.is_active && (
                   <Button size="sm" variant="danger" onClick={() => handleDeactivate(u.id)}>
-                    Deactivate
+                    {t('deactivate')}
                   </Button>
                 )}
               </div>
@@ -93,34 +93,34 @@ export default function UsersPage() {
       <Modal
         open={modalOpen}
         onClose={() => setModal(false)}
-        title={editing ? 'Edit User' : 'New User'}
+        title={editing ? t('editUser') : t('createUser')}
         size="sm"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setModal(false)}>Cancel</Button>
-            <Button type="submit" form="user-form" loading={saving}>Save</Button>
+            <Button variant="secondary" onClick={() => setModal(false)}>{t('cancel')}</Button>
+            <Button type="submit" form="user-form" loading={saving}>{t('save')}</Button>
           </>
         }
       >
         <form id="user-form" onSubmit={handleSubmit} className={styles.form}>
           {error && <Alert type="error">{error}</Alert>}
           <div className={styles.field}>
-            <label>Name *</label>
-            <input required value={form.name} onChange={e => set('name', e.target.value)} placeholder="Full name" />
+            <label>{t('userName')}</label>
+            <input required value={form.name} onChange={e => set('name', e.target.value)} placeholder={t('fullNamePlaceholder')} />
           </div>
           <div className={styles.field}>
-            <label>Email *</label>
-            <input required type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="email@family.local" />
+            <label>{t('email')}</label>
+            <input required type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder={t('emailPlaceholder')} />
           </div>
           <div className={styles.field}>
-            <label>{editing ? 'New Password (leave blank to keep)' : 'Password *'}</label>
+            <label>{editing ? t('newPasswordOptional') : t('passwordRequired')}</label>
             <input
               type="password"
               value={form.password}
               onChange={e => set('password', e.target.value)}
               required={!editing}
               minLength={6}
-              placeholder={editing ? '••••••' : 'Minimum 6 characters'}
+              placeholder={editing ? '••••••' : t('minChars')}
             />
           </div>
         </form>

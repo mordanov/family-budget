@@ -9,7 +9,7 @@ import styles from './Categories.module.css'
 const EMPTY_FORM = { name: '', description: '', color: '#6c8fff', icon: '' }
 
 export default function CategoriesPage() {
-  const { lang } = useI18n()
+  const { t } = useI18n()
   const [categories, setCategories] = useState([])
   const [loading, setLoading]       = useState(true)
   const [modalOpen, setModalOpen]   = useState(false)
@@ -41,7 +41,7 @@ export default function CategoriesPage() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this category? Operations using it will keep their category reference.')) return
+    if (!confirm(t('confirmDeleteCategory'))) return
     try { await categoriesApi.delete(id); load() }
     catch (e) { setError(apiError(e)) }
   }
@@ -51,9 +51,9 @@ export default function CategoriesPage() {
   return (
     <div>
       <PageHeader
-        title={lang === 'ru' ? 'Категории' : 'Categories'}
-        subtitle={lang === 'ru' ? 'Группируйте операции' : 'Organise your operations'}
-        action={<Button onClick={openCreate}>{lang === 'ru' ? '+ Новая категория' : '+ New Category'}</Button>}
+        title={t('categoriesTitle')}
+        subtitle={t('categoriesSubtitle')}
+        action={<Button onClick={openCreate}>{t('newCategory')}</Button>}
       />
 
       {error && <Alert type="error">{error}</Alert>}
@@ -61,7 +61,7 @@ export default function CategoriesPage() {
       {loading ? (
         <div className={styles.center}><Spinner size={28} /></div>
       ) : categories.length === 0 ? (
-        <EmptyState icon="🏷" title="No categories yet" />
+        <EmptyState icon="🏷" title={t('noCategories')} />
       ) : (
         <div className={styles.grid}>
           {categories.map(cat => (
@@ -69,13 +69,13 @@ export default function CategoriesPage() {
               <div className={styles.catHeader}>
                 <div className={styles.colorDot} style={{ background: cat.color || '#9E9E9E' }} />
                 <span className={styles.catName}>{cat.name}</span>
-                {cat.is_default && <span className={styles.defaultBadge}>default</span>}
+                {cat.is_default && <span className={styles.defaultBadge}>{t('defaultCategory')}</span>}
               </div>
               {cat.description && <p className={styles.catDesc}>{cat.description}</p>}
               <div className={styles.catActions}>
-                <Button size="sm" variant="ghost" onClick={() => openEdit(cat)}>Edit</Button>
+                <Button size="sm" variant="ghost" onClick={() => openEdit(cat)}>{t('edit')}</Button>
                 {!cat.is_default && (
-                  <Button size="sm" variant="danger" onClick={() => handleDelete(cat.id)}>Delete</Button>
+                  <Button size="sm" variant="danger" onClick={() => handleDelete(cat.id)}>{t('delete')}</Button>
                 )}
               </div>
             </Card>
@@ -86,35 +86,35 @@ export default function CategoriesPage() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? 'Edit Category' : 'New Category'}
+        title={editing ? t('editCategory') : t('createCategory')}
         size="sm"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit" form="cat-form" loading={saving}>Save</Button>
+            <Button variant="secondary" onClick={() => setModalOpen(false)}>{t('cancel')}</Button>
+            <Button type="submit" form="cat-form" loading={saving}>{t('save')}</Button>
           </>
         }
       >
         <form id="cat-form" onSubmit={handleSubmit} className={styles.form}>
           {error && <Alert type="error">{error}</Alert>}
           <div className={styles.field}>
-            <label>Name *</label>
+            <label>{t('categoryName')}</label>
             <input required value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Groceries" />
           </div>
           <div className={styles.field}>
-            <label>Description</label>
-            <input value={form.description} onChange={e => set('description', e.target.value)} placeholder="Optional" />
+            <label>{t('categoryDescription')}</label>
+            <input value={form.description} onChange={e => set('description', e.target.value)} placeholder={t('optional')} />
           </div>
           <div className={styles.row}>
             <div className={styles.field}>
-              <label>Color</label>
+              <label>{t('color')}</label>
               <div className={styles.colorRow}>
                 <input type="color" value={form.color} onChange={e => set('color', e.target.value)} className={styles.colorInput} />
                 <input value={form.color} onChange={e => set('color', e.target.value)} placeholder="#6c8fff" style={{flex:1}} />
               </div>
             </div>
             <div className={styles.field}>
-              <label>Icon (emoji/text)</label>
+              <label>{t('icon')}</label>
               <input value={form.icon} onChange={e => set('icon', e.target.value)} placeholder="🛒" maxLength={10} />
             </div>
           </div>

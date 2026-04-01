@@ -5,6 +5,7 @@ import { useI18n } from '../../i18n'
 export function Button({
   children, variant = 'primary', size = 'md',
   loading = false, disabled = false, onClick, type = 'button', className = '',
+  ...rest
 }) {
   return (
     <button
@@ -12,6 +13,7 @@ export function Button({
       className={`${styles.btn} ${styles[`btn_${variant}`]} ${styles[`btn_${size}`]} ${className}`}
       onClick={onClick}
       disabled={disabled || loading}
+      {...rest}
     >
       {loading && <Spinner size={14} />}
       {children}

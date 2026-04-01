@@ -9,7 +9,7 @@ from app.repositories.operation_repository import OperationRepository
 from app.schemas.report import (
     ReportFilter, ReportResponse, ForecastResponse,
     CategorySummary, UserSummary, PaymentTypeSummary,
-    MonthlyTrend, ForecastItem,
+    MonthlyTrend, ForecastItem, DailyBalanceResponse, DailyBalanceItem,
 )
 
 
@@ -64,6 +64,7 @@ class ReportService:
         })
         for row in by_pt_rows:
             pt = pt_map[row.payment_type.value]
+            pt["payment_method_name"] = row.payment_method_name
             if row.type.value == "income":
                 pt["total_income"] += row.total or Decimal("0")
             else:
@@ -190,3 +191,26 @@ class ReportService:
             total_estimated_expense=total_expense,
             estimated_net=total_income - total_expense,
         )
+
+    async def get_daily_balance(self, date_from: datetime, date_to: datetime) -> DailyBalanceResponse:
+        initial = await self.op_repo.get_balance_before(date_from)
+        rows = await self.op_repo.get_daily_net(date_from, date_to)
+
+        day_delta: dict[str, Decimal] = defaultdict(lambda: Decimal("0"))
+        for row in rows:
+            key = str(row.day)
+            sign = Decimal("1") if row.type.value == "income" else Decimal("-1")
+            day_delta[key] += sign * (row.total or Decimal("0"))
+
+        items: list[DailyBalanceItem] = []
+        running = initial
+        cursor = date_from.date()
+        end = date_to.date()
+        while cursor <= end:
+            key = cursor.isoformat()
+            running += day_delta.get(key, Decimal("0"))
+            items.append(DailyBalanceItem(date=key, balance=running))
+            cursor += timedelta(days=1)
+
+        return DailyBalanceResponse(items=items)
+

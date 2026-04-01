@@ -54,6 +54,13 @@
 .row:hover { background: var(--color-surface-2); }
 .table td { padding: 12px 14px; vertical-align: middle; }
 
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  width: 20%;
+  min-width: 150px;
+  white-space: nowrap;
+}
+
 .date { color: var(--color-text-muted); white-space: nowrap; font-size: 12px; }
 .amount { font-family: var(--font-mono); font-weight: 600; font-size: 14px; white-space: nowrap; }
 .muted { color: var(--color-text-muted); text-transform: capitalize; }
@@ -74,6 +81,7 @@
 
 .actions { display: flex; gap: 6px; }
 .attachmentsCell { text-align: center; font-weight: 600; }
+.typeCell :global(.badge) { white-space: nowrap; }
 .attachmentsHint {
   margin-top: 14px;
   color: var(--color-text-muted);

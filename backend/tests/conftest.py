@@ -9,6 +9,7 @@ from app.db.session import get_db
 from app.core.security import get_password_hash
 from app.models.user import User
 from app.models.category import Category
+from app.models.payment_method import PaymentMethod
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -18,6 +19,7 @@ async def engine():
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
     yield engine
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -28,6 +30,16 @@ async def engine():
 async def db(engine):
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with session_factory() as session:
+        # Initialize default payment methods for every test
+        defaults = [
+            ("cash", "Cash"),
+            ("card", "Card"),
+            ("bank_transfer", "Bank Transfer"),
+            ("other", "Other"),
+        ]
+        for key, name in defaults:
+            session.add(PaymentMethod(key=key, name=name, is_active=True))
+        await session.commit()
         yield session
         await session.rollback()
 

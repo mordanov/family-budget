@@ -9,8 +9,7 @@ const NAV = [
   { to: '/dashboard', icon: '⬛', labelKey: 'navDashboard' },
   { to: '/reports', icon: '📊', labelKey: 'navReports' },
   { to: '/balances', icon: '⚖', labelKey: 'navBalances' },
-  { to: '/categories', icon: '🏷', labelKey: 'navCategories' },
-  { to: '/users', icon: '👤', labelKey: 'navUsers' },
+  { to: '/settings', icon: '⚙', labelKey: 'navSettings' },
 ]
 
 export default function AppLayout() {
