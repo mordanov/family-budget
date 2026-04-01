@@ -44,12 +44,18 @@ npm test
 
 ## Manual VPS steps (additional)
 
-1. **Clone/update repositories on VPS**
+1. **Clone or update repositories on VPS**
 
 ```bash
 cd "$HOME"
-git clone <web-folders-repo-url> web-folders || true
-git clone <budget-site-repo-url> family-budget || true
+if [ ! -d web-folders/.git ]; then git clone <web-folders-repo-url> web-folders; fi
+if [ ! -d family-budget/.git ]; then git clone <budget-site-repo-url> family-budget; fi
+
+git -C "$HOME/web-folders" fetch --all --prune
+git -C "$HOME/web-folders" pull --ff-only
+
+git -C "$HOME/family-budget" fetch --all --prune
+git -C "$HOME/family-budget" pull --ff-only
 ```
 
 2. **Create runtime env in shared stack**

@@ -111,8 +111,32 @@ jobs:
           git checkout "$REF_NAME"
           git reset --hard "origin/$REF_NAME"
 
+          # --- Update web-folders infra repo ---
+          if [ ! -d "$WEB_FOLDERS_DIR/.git" ]; then
+            echo "web-folders repo is missing at $WEB_FOLDERS_DIR"
+            echo "Clone web-folders on VPS once, then rerun deployment"
+            exit 1
+          fi
+
+          cd "$WEB_FOLDERS_DIR"
+          PREVIOUS_WEB_FOLDERS_COMMIT=$(git rev-parse HEAD || echo "")
+          git fetch origin --prune
+
+          if git show-ref --verify --quiet refs/remotes/origin/main; then
+            git checkout main
+            git reset --hard origin/main
+          else
+            git pull --ff-only
+          fi
+
           # --- Rebuild shared stack from web-folders ---
           cd "$WEB_FOLDERS_DIR"
+
+          if ! docker compose config --services | grep -qx "budget-backend"; then
+            echo "web-folders config is outdated: budget-backend service not found"
+            echo "Update web-folders on VPS to the split budget services version and retry deployment"
+            exit 1
+          fi
 
           BUDGET_HTTP_HOST="${BUDGET_PRIMARY_DOMAIN:-budget.mainpage.ru}"
 
