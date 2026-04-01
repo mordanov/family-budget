@@ -6,6 +6,7 @@ import {
 import { Bar, Line } from 'react-chartjs-2'
 import { balancesApi, reportsApi } from '../api/index'
 import { Card, Spinner, PageHeader, EmptyState } from '../components/ui/index'
+import { useI18n } from '../i18n'
 import { formatCurrency, prevMonthRange, monthName } from '../utils/index'
 import styles from './Dashboard.module.css'
 
@@ -22,6 +23,7 @@ const CHART_OPTS = {
 }
 
 export default function DashboardPage() {
+  const { lang } = useI18n()
   const [balances, setBalances] = useState([])
   const [report, setReport] = useState(null)
   const [forecast, setForecast] = useState(null)
@@ -82,7 +84,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <PageHeader title="Dashboard" subtitle="Overview of your family finances" />
+      <PageHeader title={lang === 'ru' ? 'Дашборд' : 'Dashboard'} subtitle={lang === 'ru' ? 'Обзор семейных финансов' : 'Overview of your family finances'} />
 
       {/* KPI row */}
       <div className={styles.kpiGrid}>

@@ -1,9 +1,9 @@
 import api from './client'
 
 export const authApi = {
-  login: async (email, password) => {
+  login: async (login, password) => {
     const form = new URLSearchParams()
-    form.append('username', email)
+    form.append('username', login)
     form.append('password', password)
     const { data } = await api.post('/auth/login', form, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

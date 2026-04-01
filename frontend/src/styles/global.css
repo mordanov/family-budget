@@ -40,6 +40,11 @@ html, body {
   height: 100%;
 }
 
+img, video, canvas {
+  max-width: 100%;
+  height: auto;
+}
+
 a { color: var(--color-primary); text-decoration: none; }
 a:hover { color: var(--color-primary-hover); }
 
@@ -64,6 +69,7 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(108, 143, 255, 0.22);
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -85,3 +91,22 @@ input:focus, select:focus, textarea:focus {
 }
 .badge-income { background: rgba(62, 207, 142, 0.15); color: var(--color-income); }
 .badge-expense { background: rgba(245, 99, 58, 0.15); color: var(--color-expense); }
+
+@media (max-width: 640px) {
+  html, body {
+    font-size: 14px;
+  }
+
+  input, select, textarea {
+    min-height: 44px;
+  }
+
+  input, select, textarea, button {
+    font-size: 16px;
+  }
+
+  textarea {
+    min-height: 96px;
+  }
+}
+

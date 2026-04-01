@@ -40,3 +40,26 @@
   border-radius: 4px;
   font-size: 11px;
 }
+
+@media (max-width: 640px) {
+  .page {
+    padding: 10px;
+    align-items: flex-start;
+    padding-top: 16px;
+  }
+
+  .card {
+    padding: 20px 14px;
+    max-width: 100%;
+    gap: 14px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
+}
+

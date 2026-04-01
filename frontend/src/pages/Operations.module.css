@@ -73,6 +73,12 @@
 }
 
 .actions { display: flex; gap: 6px; }
+.attachmentsCell { text-align: center; font-weight: 600; }
+.attachmentsHint {
+  margin-top: 14px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
 
 .pagination {
   display: flex;
@@ -82,3 +88,77 @@
   padding: 20px 0;
 }
 .pageInfo { font-size: 13px; color: var(--color-text-muted); }
+
+@media (max-width: 720px) {
+  .filters {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .filters select,
+  .filters input {
+    min-width: 100%;
+  }
+
+  .tableWrap {
+    border: none;
+    overflow: visible;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .row {
+    border: 1px solid var(--color-border);
+    border-radius: var(--color-radius-sm);
+    margin-bottom: 12px;
+    padding: 8px 10px;
+  }
+
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .table td:last-child {
+    border-bottom: none;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    color: var(--color-text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .desc {
+    max-width: none;
+    white-space: normal;
+    text-align: right;
+  }
+
+  .actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .pagination {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+}
+

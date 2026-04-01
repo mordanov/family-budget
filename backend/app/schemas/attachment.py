@@ -11,6 +11,7 @@ class AttachmentResponse(BaseModel):
     file_size: int
     description: str | None
     operation_id: int
+    public_url: str
     created_at: datetime
 
     model_config = {"from_attributes": True}

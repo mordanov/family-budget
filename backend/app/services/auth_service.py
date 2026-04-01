@@ -10,12 +10,12 @@ class AuthService:
     def __init__(self, db: AsyncSession):
         self.repo = UserRepository(db)
 
-    async def login(self, email: str, password: str) -> Token:
-        user = await self.repo.get_by_email(email)
+    async def login(self, login: str, password: str) -> Token:
+        user = await self.repo.get_by_login_identifier(login)
         if not user or not verify_password(password, user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password",
+                detail="Incorrect login or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         if not user.is_active:

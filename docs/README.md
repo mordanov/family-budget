@@ -42,6 +42,22 @@ npm install
 npm test
 ```
 
+## 404 and ORB sanity checks
+
+After deploy, verify routing and static responses return expected status/content type:
+
+```bash
+curl -i http://localhost/operations
+curl -i http://localhost/assets/does-not-exist.js
+curl -i http://localhost/uploads/does-not-exist.pdf
+curl -i http://localhost/api/v1/not-found
+```
+
+Expected:
+- `/operations` serves SPA HTML (`200`)
+- missing static assets and uploads return `404` (not SPA HTML fallback)
+- unknown API path returns backend JSON `404`
+
 ## Manual VPS steps (additional)
 
 1. **Clone or update repositories on VPS**

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "supersecretkey-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ROBOT_API_TOKENS: str = ""
 
     # App
     ENVIRONMENT: str = "development"
@@ -39,6 +40,23 @@ class Settings(BaseSettings):
     @property
     def allowed_origins_list(self) -> List[str]:
         return [item.strip() for item in self.ALLOWED_ORIGINS.split(",") if item.strip()]
+
+    @property
+    def robot_api_tokens_map(self) -> dict[str, str]:
+        tokens: dict[str, str] = {}
+        raw = self.ROBOT_API_TOKENS.strip()
+        if not raw:
+            return tokens
+        for item in raw.split(","):
+            entry = item.strip()
+            if not entry or ":" not in entry:
+                continue
+            token, login = entry.split(":", 1)
+            token = token.strip()
+            login = login.strip()
+            if token and login:
+                tokens[token] = login
+        return tokens
 
 
 settings = Settings()

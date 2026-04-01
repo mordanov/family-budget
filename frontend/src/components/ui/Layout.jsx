@@ -1,19 +1,21 @@
 import React, { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
+import { useI18n } from '../../i18n'
 import styles from './Layout.module.css'
 
 const NAV = [
-  { to: '/',            icon: '⬛', label: 'Dashboard' },
-  { to: '/operations',  icon: '↕',  label: 'Operations' },
-  { to: '/reports',     icon: '📊', label: 'Reports' },
-  { to: '/balances',    icon: '⚖',  label: 'Balances' },
-  { to: '/categories',  icon: '🏷',  label: 'Categories' },
-  { to: '/users',       icon: '👤', label: 'Users' },
+  { to: '/operations', icon: '↕', labelKey: 'navOperations' },
+  { to: '/dashboard', icon: '⬛', labelKey: 'navDashboard' },
+  { to: '/reports', icon: '📊', labelKey: 'navReports' },
+  { to: '/balances', icon: '⚖', labelKey: 'navBalances' },
+  { to: '/categories', icon: '🏷', labelKey: 'navCategories' },
+  { to: '/users', icon: '👤', labelKey: 'navUsers' },
 ]
 
 export default function AppLayout() {
   const { user, logout } = useAuthStore()
+  const { lang, switchLanguage, t } = useI18n()
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
 
@@ -24,21 +26,20 @@ export default function AppLayout() {
       <aside className={styles.sidebar}>
         <div className={styles.logo}>
           <span className={styles.logoIcon}>💰</span>
-          {!collapsed && <span className={styles.logoText}>FamilyBudget</span>}
+          {!collapsed && <span className={styles.logoText}>{t('appName')}</span>}
         </div>
 
         <nav className={styles.nav}>
-          {NAV.map(({ to, icon, label }) => (
+          {NAV.map(({ to, icon, labelKey }) => (
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
               className={({ isActive }) =>
                 `${styles.navItem} ${isActive ? styles.navActive : ''}`
               }
             >
               <span className={styles.navIcon}>{icon}</span>
-              {!collapsed && <span>{label}</span>}
+              {!collapsed && <span>{t(labelKey)}</span>}
             </NavLink>
           ))}
         </nav>
@@ -55,7 +56,33 @@ export default function AppLayout() {
               </div>
             </div>
           )}
-          <button className={styles.logoutBtn} onClick={handleLogout} title="Logout">
+          {!collapsed && (
+            <div className={styles.langSwitch}>
+              <button
+                className={`${styles.langBtn} ${lang === 'en' ? styles.langBtnActive : ''}`}
+                onClick={() => switchLanguage('en')}
+                type="button"
+                aria-label="Switch language to English"
+              >
+                EN
+              </button>
+              <button
+                className={`${styles.langBtn} ${lang === 'ru' ? styles.langBtnActive : ''}`}
+                onClick={() => switchLanguage('ru')}
+                type="button"
+                aria-label="Переключить язык на русский"
+              >
+                RU
+              </button>
+            </div>
+          )}
+          <button
+            className={styles.logoutBtn}
+            onClick={handleLogout}
+            title={t('logout')}
+            aria-label={t('logout')}
+            type="button"
+          >
             ⇥
           </button>
         </div>
@@ -63,7 +90,7 @@ export default function AppLayout() {
         <button
           className={styles.collapseBtn}
           onClick={() => setCollapsed((c) => !c)}
-          title={collapsed ? 'Expand' : 'Collapse'}
+          title={collapsed ? t('expand') : t('collapse')}
         >
           {collapsed ? '›' : '‹'}
         </button>

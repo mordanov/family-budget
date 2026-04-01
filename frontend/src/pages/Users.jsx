@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { usersApi } from '../api/index'
 import { Button, Card, PageHeader, EmptyState, Alert, Spinner } from '../components/ui/index'
+import { useI18n } from '../i18n'
 import Modal from '../components/ui/Modal'
 import { formatDate, apiError } from '../utils/index'
 import styles from './Users.module.css'
@@ -8,6 +9,7 @@ import styles from './Users.module.css'
 const EMPTY = { name: '', email: '', password: '' }
 
 export default function UsersPage() {
+  const { lang } = useI18n()
   const [users, setUsers]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [modalOpen, setModal]   = useState(false)
@@ -51,9 +53,9 @@ export default function UsersPage() {
   return (
     <div>
       <PageHeader
-        title="Users"
-        subtitle="Manage family members"
-        action={<Button onClick={openCreate}>+ New User</Button>}
+        title={lang === 'ru' ? 'Пользователи' : 'Users'}
+        subtitle={lang === 'ru' ? 'Управление членами семьи' : 'Manage family members'}
+        action={<Button onClick={openCreate}>{lang === 'ru' ? '+ Новый пользователь' : '+ New User'}</Button>}
       />
 
       {error && <Alert type="error">{error}</Alert>}

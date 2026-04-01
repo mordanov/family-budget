@@ -6,6 +6,7 @@ import {
 import { Doughnut, Bar } from 'react-chartjs-2'
 import { reportsApi } from '../api/index'
 import { Card, PageHeader, Spinner, EmptyState, Button, Alert } from '../components/ui/index'
+import { useI18n } from '../i18n'
 import { formatCurrency, prevMonthRange, monthName, apiError } from '../utils/index'
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from 'date-fns'
 import styles from './Reports.module.css'
@@ -36,6 +37,7 @@ const COLORS = [
 ]
 
 export default function ReportsPage() {
+  const { lang } = useI18n()
   const prev = prevMonthRange()
   const [dateFrom, setDateFrom] = useState(prev.date_from.slice(0,10))
   const [dateTo, setDateTo]     = useState(prev.date_to.slice(0,10))
@@ -103,7 +105,7 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <PageHeader title="Reports" subtitle="Analyse your income and spending" />
+      <PageHeader title={lang === 'ru' ? 'Отчеты' : 'Reports'} subtitle={lang === 'ru' ? 'Анализ доходов и расходов' : 'Analyse your income and spending'} />
 
       {/* Filter bar */}
       <Card className={styles.filterBar}>

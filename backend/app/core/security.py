@@ -36,6 +36,20 @@ async def get_current_user(
 ):
     from app.repositories.user_repository import UserRepository
 
+    repo = UserRepository(db)
+    robot_login = settings.robot_api_tokens_map.get(token)
+    if robot_login:
+        user = await repo.get_by_login_identifier(robot_login)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Robot token user not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        if not user.is_active:
+            raise HTTPException(status_code=400, detail="Inactive user")
+        return user
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -49,7 +63,6 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
 
-    repo = UserRepository(db)
     user = await repo.get_by_id(int(user_id))
     if user is None:
         raise credentials_exception

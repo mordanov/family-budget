@@ -22,3 +22,8 @@ class Attachment(Base):
     )
 
     operation: Mapped["Operation"] = relationship("Operation", back_populates="attachments")
+
+    @property
+    def public_url(self) -> str:
+        return f"/uploads/{self.operation_id}/{self.filename}"
+

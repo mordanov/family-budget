@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { categoriesApi } from '../api/index'
 import { Button, Card, PageHeader, EmptyState, Alert, Spinner } from '../components/ui/index'
+import { useI18n } from '../i18n'
 import Modal from '../components/ui/Modal'
 import { apiError } from '../utils/index'
 import styles from './Categories.module.css'
@@ -8,6 +9,7 @@ import styles from './Categories.module.css'
 const EMPTY_FORM = { name: '', description: '', color: '#6c8fff', icon: '' }
 
 export default function CategoriesPage() {
+  const { lang } = useI18n()
   const [categories, setCategories] = useState([])
   const [loading, setLoading]       = useState(true)
   const [modalOpen, setModalOpen]   = useState(false)
@@ -49,9 +51,9 @@ export default function CategoriesPage() {
   return (
     <div>
       <PageHeader
-        title="Categories"
-        subtitle="Organise your operations"
-        action={<Button onClick={openCreate}>+ New Category</Button>}
+        title={lang === 'ru' ? 'Категории' : 'Categories'}
+        subtitle={lang === 'ru' ? 'Группируйте операции' : 'Organise your operations'}
+        action={<Button onClick={openCreate}>{lang === 'ru' ? '+ Новая категория' : '+ New Category'}</Button>}
       />
 
       {error && <Alert type="error">{error}</Alert>}

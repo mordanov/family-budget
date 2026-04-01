@@ -3,11 +3,14 @@ import { operationsApi, attachmentsApi } from '../api/index'
 import { Button, PageHeader, Badge, EmptyState, Alert, Spinner, Card } from '../components/ui/index'
 import Modal from '../components/ui/Modal'
 import OperationForm from '../components/operations/OperationForm'
+import AttachmentManager from '../components/operations/AttachmentManager'
+import { useI18n } from '../i18n'
 import { formatCurrency, formatDateTime, apiError } from '../utils/index'
 import { useCategories, useUsers } from '../hooks/index'
 import styles from './Operations.module.css'
 
 export default function OperationsPage() {
+  const { lang, t } = useI18n()
   const [data, setData] = useState({ items: [], total: 0, page: 1, pages: 1 })
   const [filters, setFilters] = useState({ page: 1, size: 20 })
   const [loading, setLoading] = useState(true)
@@ -52,11 +55,19 @@ export default function OperationsPage() {
     try {
       if (editing?.id) {
         await operationsApi.update(editing.id, payload)
+        setModalOpen(false)
       } else {
-        await operationsApi.create(payload)
+        const created = await operationsApi.create(payload)
+        const init = {
+          ...created,
+          category_id: created.category.id,
+          user_id: created.user.id,
+          operation_date: created.operation_date?.slice(0, 16),
+          recurring_end_date: created.recurring_end_date?.slice(0, 10) || '',
+        }
+        setEditing(init)
       }
-      setModalOpen(false)
-      load()
+      await load()
     } catch (e) {
       throw e
     } finally {
@@ -79,9 +90,9 @@ export default function OperationsPage() {
   return (
     <div>
       <PageHeader
-        title="Operations"
-        subtitle={`${data.total} operations total`}
-        action={<Button onClick={openCreate}>+ New Operation</Button>}
+        title={t('operationsTitle')}
+        subtitle={t('operationsSubtitle', { count: data.total })}
+        action={<Button onClick={openCreate}>{t('newOperation')}</Button>}
       />
 
       {error && <Alert type="error">{error}</Alert>}
@@ -89,24 +100,24 @@ export default function OperationsPage() {
       {/* Filters */}
       <Card className={styles.filters}>
         <select onChange={(e) => setFilter('type', e.target.value)} defaultValue="">
-          <option value="">All Types</option>
-          <option value="income">Income</option>
-          <option value="expense">Expense</option>
+          <option value="">{t('allTypes')}</option>
+          <option value="income">{lang === 'ru' ? 'Доход' : 'Income'}</option>
+          <option value="expense">{lang === 'ru' ? 'Расход' : 'Expense'}</option>
         </select>
         <select onChange={(e) => setFilter('category_id', e.target.value)} defaultValue="">
-          <option value="">All Categories</option>
+          <option value="">{t('allCategories')}</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <select onChange={(e) => setFilter('user_id', e.target.value)} defaultValue="">
-          <option value="">All Users</option>
+          <option value="">{t('allUsers')}</option>
           {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
         </select>
         <select onChange={(e) => setFilter('payment_type', e.target.value)} defaultValue="">
-          <option value="">All Payment Types</option>
-          <option value="cash">Cash</option>
+          <option value="">{t('allPaymentTypes')}</option>
+          <option value="cash">{lang === 'ru' ? 'Наличные' : 'Cash'}</option>
           <option value="card">Card</option>
-          <option value="bank_transfer">Bank Transfer</option>
-          <option value="other">Other</option>
+          <option value="bank_transfer">{lang === 'ru' ? 'Банковский перевод' : 'Bank Transfer'}</option>
+          <option value="other">{lang === 'ru' ? 'Другое' : 'Other'}</option>
         </select>
         <input
           type="date"
@@ -124,44 +135,48 @@ export default function OperationsPage() {
       {loading ? (
         <div className={styles.loadingRow}><Spinner /></div>
       ) : data.items.length === 0 ? (
-        <EmptyState icon="💸" title="No operations found" description="Create your first operation to get started." />
+        <EmptyState icon="💸" title={t('noOperations')} description={t('createFirstOperation')} />
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Amount</th>
-                <th>Category</th>
-                <th>User</th>
-                <th>Payment</th>
-                <th>Description</th>
+                <th>{lang === 'ru' ? 'Дата' : 'Date'}</th>
+                <th>{lang === 'ru' ? 'Тип' : 'Type'}</th>
+                <th>{lang === 'ru' ? 'Сумма' : 'Amount'}</th>
+                <th>{lang === 'ru' ? 'Категория' : 'Category'}</th>
+                <th>{lang === 'ru' ? 'Пользователь' : 'User'}</th>
+                <th>{lang === 'ru' ? 'Оплата' : 'Payment'}</th>
+                <th>{lang === 'ru' ? 'Описание' : 'Description'}</th>
+                <th>{t('attachments')}</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {data.items.map((op) => (
                 <tr key={op.id} className={styles.row}>
-                  <td className={styles.date}>{formatDateTime(op.operation_date)}</td>
-                  <td><Badge type={op.type} /></td>
-                  <td className={`${styles.amount} ${op.type === 'income' ? 'amount-income' : 'amount-expense'}`}>
+                  <td data-label={lang === 'ru' ? 'Дата' : 'Date'} className={styles.date}>{formatDateTime(op.operation_date)}</td>
+                  <td data-label={lang === 'ru' ? 'Тип' : 'Type'}><Badge type={op.type} /></td>
+                  <td data-label={lang === 'ru' ? 'Сумма' : 'Amount'} className={`${styles.amount} ${op.type === 'income' ? 'amount-income' : 'amount-expense'}`}>
                     {op.type === 'income' ? '+' : '-'}{formatCurrency(op.amount)}
                     {op.is_recurring && <span className={styles.recurBadge}>↻</span>}
                   </td>
-                  <td>
+                  <td data-label={lang === 'ru' ? 'Категория' : 'Category'}>
                     <span className={styles.catChip}>
                       <span style={{ background: op.category?.color || '#9E9E9E' }} className={styles.catDot} />
                       {op.category?.name}
                     </span>
                   </td>
-                  <td>{op.user?.name}</td>
-                  <td className={styles.muted}>{op.payment_type?.replace('_', ' ')}</td>
-                  <td className={styles.desc}>{op.description || '—'}</td>
-                  <td>
+                  <td data-label={lang === 'ru' ? 'Пользователь' : 'User'}>{op.user?.name}</td>
+                  <td data-label={lang === 'ru' ? 'Оплата' : 'Payment'} className={styles.muted}>{op.payment_type?.replace('_', ' ')}</td>
+                  <td data-label={lang === 'ru' ? 'Описание' : 'Description'} className={styles.desc}>{op.description || '—'}</td>
+                  <td data-label={t('attachments')} className={styles.attachmentsCell}>
+                    {op.attachments?.length || 0}
+                  </td>
+                  <td data-label={lang === 'ru' ? 'Действия' : 'Actions'}>
                     <div className={styles.actions}>
-                      <Button size="sm" variant="ghost" onClick={() => openEdit(op)}>Edit</Button>
-                      <Button size="sm" variant="danger" onClick={() => handleDelete(op.id)}>Del</Button>
+                      <Button size="sm" variant="ghost" onClick={() => openEdit(op)}>{lang === 'ru' ? 'Изменить' : 'Edit'}</Button>
+                      <Button size="sm" variant="danger" onClick={() => handleDelete(op.id)}>{lang === 'ru' ? 'Удалить' : 'Delete'}</Button>
                     </div>
                   </td>
                 </tr>
@@ -176,12 +191,12 @@ export default function OperationsPage() {
         <div className={styles.pagination}>
           <Button size="sm" variant="secondary" disabled={data.page <= 1}
             onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}>
-            ← Prev
+            {lang === 'ru' ? '← Назад' : '← Prev'}
           </Button>
-          <span className={styles.pageInfo}>Page {data.page} of {data.pages}</span>
+          <span className={styles.pageInfo}>{lang === 'ru' ? `Страница ${data.page} из ${data.pages}` : `Page ${data.page} of ${data.pages}`}</span>
           <Button size="sm" variant="secondary" disabled={data.page >= data.pages}
             onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}>
-            Next →
+            {lang === 'ru' ? 'Далее →' : 'Next →'}
           </Button>
         </div>
       )}
@@ -190,8 +205,8 @@ export default function OperationsPage() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? 'Edit Operation' : 'New Operation'}
-        size="md"
+        title={editing ? (lang === 'ru' ? 'Изменить операцию' : 'Edit Operation') : (lang === 'ru' ? 'Новая операция' : 'New Operation')}
+        size="lg"
       >
         <OperationForm
           initial={editing || {}}
@@ -199,6 +214,15 @@ export default function OperationsPage() {
           onCancel={() => setModalOpen(false)}
           loading={submitting}
         />
+        {editing?.id ? (
+          <AttachmentManager operationId={editing.id} />
+        ) : (
+          <p className={styles.attachmentsHint}>
+            {lang === 'ru'
+              ? 'Сохраните операцию, чтобы добавить фото, снимок камеры или PDF.'
+              : 'Save the operation first to add camera photos, images or PDF files.'}
+          </p>
+        )}
       </Modal>
     </div>
   )

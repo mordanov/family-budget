@@ -2,11 +2,13 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { Button, Alert } from '../components/ui/index'
+import { useI18n } from '../i18n'
 import styles from './Login.module.css'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [loginValue, setLoginValue] = useState('')
   const [password, setPassword] = useState('')
+  const { t } = useI18n()
   const { login, loading, error, clearError } = useAuthStore()
   const navigate = useNavigate()
 
@@ -14,8 +16,8 @@ export default function LoginPage() {
     e.preventDefault()
     clearError()
     try {
-      await login(email, password)
-      navigate('/')
+      await login(loginValue, password)
+      navigate('/operations')
     } catch {}
   }
 
@@ -23,40 +25,46 @@ export default function LoginPage() {
     <div className={styles.page}>
       <div className={styles.card}>
         <div className={styles.logo}>💰</div>
-        <h1 className={styles.title}>Family Budget</h1>
-        <p className={styles.subtitle}>Sign in to manage your family finances</p>
+        <h1 className={styles.title}>{t('appName')}</h1>
+        <p className={styles.subtitle}>{t('signInSubtitle')}</p>
 
         {error && <Alert type="error">{error}</Alert>}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
-            <label>Email</label>
+            <label>{t('loginLabel')}</label>
             <input
-              type="email"
-              placeholder="you@family.local"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              placeholder={t('loginPlaceholder')}
+              value={loginValue}
+              onChange={(e) => setLoginValue(e.target.value)}
+              autoComplete="username"
+              inputMode="email"
+              autoCapitalize="none"
+              spellCheck={false}
               required
               autoFocus
             />
           </div>
           <div className={styles.field}>
-            <label>Password</label>
+            <label>{t('password')}</label>
             <input
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              enterKeyHint="go"
               required
             />
           </div>
           <Button type="submit" size="lg" loading={loading} className={styles.submitBtn}>
-            Sign In
+            {t('signIn')}
           </Button>
         </form>
 
         <p className={styles.hint}>
-          Default users: <code>user1@family.local</code> / <code>password1</code>
+          {t('defaultUsersHint')}: <code>user1@family.local</code> / <code>password1</code>
         </p>
       </div>
     </div>

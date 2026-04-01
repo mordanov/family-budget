@@ -1,5 +1,6 @@
 import React from 'react'
 import styles from './ui.module.css'
+import { useI18n } from '../../i18n'
 
 export function Button({
   children, variant = 'primary', size = 'md',
@@ -32,9 +33,12 @@ export function Card({ children, className = '', style }) {
 }
 
 export function Badge({ type }) {
+  const { lang } = useI18n()
+  const incomeLabel = lang === 'ru' ? 'Доход' : 'Income'
+  const expenseLabel = lang === 'ru' ? 'Расход' : 'Expense'
   return (
     <span className={`badge ${type === 'income' ? 'badge-income' : 'badge-expense'}`}>
-      {type === 'income' ? '▲ Income' : '▼ Expense'}
+      {type === 'income' ? `▲ ${incomeLabel}` : `▼ ${expenseLabel}`}
     </span>
   )
 }

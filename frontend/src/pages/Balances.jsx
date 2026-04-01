@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { balancesApi } from '../api/index'
 import { Card, PageHeader, Spinner, EmptyState, Button, Alert } from '../components/ui/index'
+import { useI18n } from '../i18n'
 import Modal from '../components/ui/Modal'
 import { formatCurrency, monthName, apiError } from '../utils/index'
 import styles from './Balances.module.css'
 
 export default function BalancesPage() {
+  const { lang } = useI18n()
   const [balances, setBalances] = useState([])
   const [loading, setLoading]   = useState(true)
   const [editing, setEditing]   = useState(null)
@@ -39,14 +41,14 @@ export default function BalancesPage() {
 
   return (
     <div>
-      <PageHeader title="Monthly Balances" subtitle="Debit & credit summaries, editable opening balances" />
+      <PageHeader title={lang === 'ru' ? 'Месячные балансы' : 'Monthly Balances'} subtitle={lang === 'ru' ? 'Сводка балансов и редактируемые начальные остатки' : 'Debit & credit summaries, editable opening balances'} />
 
       {error && <Alert type="error">{error}</Alert>}
 
       {loading ? (
         <div className={styles.center}><Spinner size={28} /></div>
       ) : balances.length === 0 ? (
-        <EmptyState icon="⚖" title="No balance records yet" description="Balances are created automatically when you add operations." />
+        <EmptyState icon="⚖" title={lang === 'ru' ? 'Записей баланса пока нет' : 'No balance records yet'} description={lang === 'ru' ? 'Балансы создаются автоматически после добавления операций.' : 'Balances are created automatically when you add operations.'} />
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
