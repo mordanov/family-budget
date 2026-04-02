@@ -66,12 +66,10 @@ export default function CategoriesPage() {
         <div className={styles.grid}>
           {categories.map(cat => (
             <Card key={cat.id} className={styles.catCard}>
-              <div className={styles.catHeader}>
-                <div className={styles.colorDot} style={{ background: cat.color || '#9E9E9E' }} />
-                <span className={styles.catName}>{cat.name}</span>
-                {cat.is_default && <span className={styles.defaultBadge}>{t('defaultCategory')}</span>}
-              </div>
-              {cat.description && <p className={styles.catDesc}>{cat.description}</p>}
+              <div className={styles.colorDot} style={{ background: cat.color || '#9E9E9E' }} />
+              {cat.icon && <span className={styles.catIcon}>{cat.icon}</span>}
+              <span className={styles.catName}>{cat.name}</span>
+              {cat.is_default && <span className={styles.defaultBadge}>{t('defaultCategory')}</span>}
               <div className={styles.catActions}>
                 <Button
                   size="sm"

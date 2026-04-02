@@ -1,16 +1,15 @@
 .center { display: flex; justify-content: center; padding: 60px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.grid { display: flex; flex-direction: column; gap: 8px; }
 
-.catCard { display: flex; flex-direction: column; gap: 10px; padding: 18px; }
-.catHeader { display: flex; align-items: center; gap: 10px; }
+.catCard { display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
 .colorDot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.catIcon { font-size: 16px; line-height: 1; flex-shrink: 0; }
 .catName { font-weight: 600; font-size: 15px; flex: 1; }
 .defaultBadge {
   font-size: 10px; padding: 2px 7px; border-radius: 100px;
   background: rgba(108,143,255,0.15); color: var(--color-primary);
 }
-.catDesc { font-size: 13px; color: var(--color-text-muted); }
-.catActions { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; border-top: 1px solid var(--color-border); }
+.catActions { display: flex; gap: 8px; margin-left: auto; flex-shrink: 0; }
 .iconAction {
   min-width: 34px;
   justify-content: center;
