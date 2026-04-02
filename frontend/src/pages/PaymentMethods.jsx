@@ -102,8 +102,26 @@ export default function PaymentMethodsPage() {
                 <p className={styles.key}>{item.key}</p>
               </div>
               <div className={styles.actions}>
-                <Button size="sm" variant="ghost" onClick={() => openEdit(item)}>{t('edit')}</Button>
-                <Button size="sm" variant="danger" onClick={() => handleDelete(item)}>{t('delete')}</Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className={styles.iconAction}
+                  title={t('edit')}
+                  aria-label={t('edit')}
+                  onClick={() => openEdit(item)}
+                >
+                  ✎
+                </Button>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  className={styles.iconAction}
+                  title={t('delete')}
+                  aria-label={t('delete')}
+                  onClick={() => handleDelete(item)}
+                >
+                  🗑
+                </Button>
               </div>
             </Card>
           ))}

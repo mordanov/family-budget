@@ -73,9 +73,27 @@ export default function CategoriesPage() {
               </div>
               {cat.description && <p className={styles.catDesc}>{cat.description}</p>}
               <div className={styles.catActions}>
-                <Button size="sm" variant="ghost" onClick={() => openEdit(cat)}>{t('edit')}</Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className={styles.iconAction}
+                  title={t('edit')}
+                  aria-label={t('edit')}
+                  onClick={() => openEdit(cat)}
+                >
+                  ✎
+                </Button>
                 {!cat.is_default && (
-                  <Button size="sm" variant="danger" onClick={() => handleDelete(cat.id)}>{t('delete')}</Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    className={styles.iconAction}
+                    title={t('delete')}
+                    aria-label={t('delete')}
+                    onClick={() => handleDelete(cat.id)}
+                  >
+                    🗑
+                  </Button>
                 )}
               </div>
             </Card>
