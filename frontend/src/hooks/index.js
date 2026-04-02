@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { categoriesApi, usersApi } from '../api/index'
+import { categoriesApi, paymentMethodsApi, usersApi } from '../api/index'
 
 export function useAsync(asyncFn, deps = []) {
   const [state, setState] = useState({ data: null, loading: true, error: null })
@@ -45,3 +45,17 @@ export function useUsers() {
 
   return { users, loading }
 }
+
+export function usePaymentMethods() {
+  const [paymentMethods, setPaymentMethods] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    paymentMethodsApi.list()
+      .then(setPaymentMethods)
+      .finally(() => setLoading(false))
+  }, [])
+
+  return { paymentMethods, loading }
+}
+

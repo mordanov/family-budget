@@ -27,6 +27,35 @@
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 13px; color: var(--color-text-muted); font-weight: 500; }
 
+.attachCreateRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.attachHint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.selectedFiles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selectedFileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--color-radius-sm);
+  background: var(--color-surface-2);
+}
+
 .recurringRow { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .checkLabel {
   display: flex; align-items: center; gap: 8px;

@@ -1,33 +1,56 @@
-import React, { useState, useEffect } from 'react'
-import { useCategories, useUsers } from '../../hooks/index'
+import React, { useMemo, useRef, useState, useEffect } from 'react'
+import { useCategories, usePaymentMethods, useUsers } from '../../hooks/index'
 import { Button, Alert } from '../ui/index'
-import { OPERATION_TYPES, PAYMENT_TYPES, apiError } from '../../utils/index'
+import {
+  OPERATION_TYPES,
+  apiError,
+  localDateTimeInputToIso,
+  toLocalDateInput,
+  toLocalDateTimeInput,
+} from '../../utils/index'
 import { useI18n } from '../../i18n'
-import { format } from 'date-fns'
 import styles from './OperationForm.module.css'
 
-const EMPTY = {
+const createEmpty = () => ({
   amount: '',
   currency: 'EUR',
   type: 'expense',
-  payment_type: 'card',
+  payment_method_id: '',
   description: '',
   is_recurring: false,
   recurring_end_date: '',
-  operation_date: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+  operation_date: toLocalDateTimeInput(new Date()),
   category_id: '',
   user_id: '',
-}
+})
 
-export default function OperationForm({ initial = {}, onSubmit, onCancel, loading }) {
-  const { lang } = useI18n()
-  const [form, setForm] = useState({ ...EMPTY, ...initial })
+const normalizeInitial = (initial = {}) => ({
+  ...createEmpty(),
+  ...initial,
+  payment_method_id: initial.payment_method_id || initial.payment_method?.id || '',
+  operation_date: initial.operation_date
+    ? toLocalDateTimeInput(initial.operation_date)
+    : toLocalDateTimeInput(new Date()),
+  recurring_end_date: initial.recurring_end_date ? toLocalDateInput(initial.recurring_end_date) : '',
+})
+
+export default function OperationForm({ initial = {}, onSubmit, onCancel, loading, allowCreateAttachments = false }) {
+  const { t } = useI18n()
+  const fileInputRef = useRef(null)
+  const [form, setForm] = useState(normalizeInitial(initial))
+  const [selectedFiles, setSelectedFiles] = useState([])
   const [error, setError] = useState(null)
   const { categories } = useCategories()
   const { users } = useUsers()
+  const { paymentMethods } = usePaymentMethods()
+
+  const isEditing = Boolean(initial?.id)
+  const canAttachOnCreate = allowCreateAttachments && !isEditing
+  const operationTypes = useMemo(() => OPERATION_TYPES, [])
 
   useEffect(() => {
-    setForm({ ...EMPTY, ...initial })
+    setForm(normalizeInitial(initial))
+    setSelectedFiles([])
   }, [initial])
 
   useEffect(() => {
@@ -38,9 +61,23 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
     if (users.length && !form.user_id) {
       setForm((f) => ({ ...f, user_id: users[0]?.id || '' }))
     }
-  }, [categories, users])
+    if (paymentMethods.length && !form.payment_method_id) {
+      const preferred = paymentMethods.find((item) => item.key === 'card') || paymentMethods[0]
+      setForm((f) => ({ ...f, payment_method_id: preferred?.id || '' }))
+    }
+  }, [categories, users, paymentMethods, form.category_id, form.user_id, form.payment_method_id])
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }))
+
+  const addFiles = (files) => {
+    const nextFiles = Array.from(files || [])
+    if (!nextFiles.length) return
+    setSelectedFiles((current) => [...current, ...nextFiles])
+  }
+
+  const removeSelectedFile = (index) => {
+    setSelectedFiles((current) => current.filter((_, i) => i !== index))
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -51,12 +88,13 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
         amount: parseFloat(form.amount),
         category_id: parseInt(form.category_id),
         user_id: parseInt(form.user_id),
-        operation_date: new Date(form.operation_date).toISOString(),
+        payment_method_id: parseInt(form.payment_method_id),
+        operation_date: localDateTimeInputToIso(form.operation_date),
         recurring_end_date: form.recurring_end_date
-          ? new Date(form.recurring_end_date).toISOString()
+          ? new Date(`${form.recurring_end_date}T00:00:00`).toISOString()
           : null,
       }
-      await onSubmit(payload)
+      await onSubmit(payload, { files: selectedFiles })
     } catch (err) {
       setError(apiError(err))
     }
@@ -67,21 +105,21 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
       {error && <Alert type="error">{error}</Alert>}
 
       <div className={styles.typeToggle}>
-        {OPERATION_TYPES.map((t) => (
+        {operationTypes.map((typeOption) => (
           <button
-            key={t.value}
+            key={typeOption.value}
             type="button"
-            className={`${styles.typeBtn} ${form.type === t.value ? styles[`type_${t.value}`] : ''}`}
-            onClick={() => set('type', t.value)}
+            className={`${styles.typeBtn} ${form.type === typeOption.value ? styles[`type_${typeOption.value}`] : ''}`}
+            onClick={() => set('type', typeOption.value)}
           >
-            {t.value === 'income' ? '▲' : '▼'} {lang === 'ru' ? (t.value === 'income' ? 'Доход' : 'Расход') : t.label}
+            {typeOption.value === 'income' ? '▲' : '▼'} {typeOption.value === 'income' ? t('income') : t('expense')}
           </button>
         ))}
       </div>
 
       <div className={styles.row}>
         <div className={styles.field}>
-          <label>{lang === 'ru' ? 'Сумма (EUR)' : 'Amount (EUR)'}</label>
+          <label>{t('tableAmount')} (EUR)</label>
           <input
             type="number"
             step="0.01"
@@ -94,12 +132,11 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
           />
         </div>
         <div className={styles.field}>
-          <label>{lang === 'ru' ? 'Способ оплаты' : 'Payment Type'}</label>
-          <select value={form.payment_type} onChange={(e) => set('payment_type', e.target.value)}>
-            {PAYMENT_TYPES.map((p) => (
-              <option key={p.value} value={p.value}>{lang === 'ru'
-                ? ({ cash: 'Наличные', card: 'Карта', bank_transfer: 'Банковский перевод', other: 'Другое' }[p.value] || p.label)
-                : p.label}</option>
+          <label>{t('paymentType')}</label>
+          <select value={form.payment_method_id} onChange={(e) => set('payment_method_id', e.target.value)} required>
+            <option value="">{t('selectPaymentMethod')}</option>
+            {paymentMethods.map((item) => (
+              <option key={item.id} value={item.id}>{item.name}</option>
             ))}
           </select>
         </div>
@@ -107,18 +144,18 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
 
       <div className={styles.row}>
         <div className={styles.field}>
-          <label>{lang === 'ru' ? 'Категория' : 'Category'}</label>
+          <label>{t('category')}</label>
           <select value={form.category_id} onChange={(e) => set('category_id', e.target.value)} required>
-            <option value="">{lang === 'ru' ? 'Выберите категорию' : 'Select category'}</option>
+            <option value="">{t('selectCategory')}</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
         </div>
         <div className={styles.field}>
-          <label>{lang === 'ru' ? 'Пользователь' : 'User'}</label>
+          <label>{t('user')}</label>
           <select value={form.user_id} onChange={(e) => set('user_id', e.target.value)} required>
-            <option value="">{lang === 'ru' ? 'Выберите пользователя' : 'Select user'}</option>
+            <option value="">{t('selectUser')}</option>
             {users.map((u) => (
               <option key={u.id} value={u.id}>{u.name}</option>
             ))}
@@ -127,7 +164,7 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
       </div>
 
       <div className={styles.field}>
-        <label>{lang === 'ru' ? 'Дата и время' : 'Date & Time'}</label>
+        <label>{t('dateTime')}</label>
         <input
           type="datetime-local"
           required
@@ -137,14 +174,49 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
       </div>
 
       <div className={styles.field}>
-        <label>{lang === 'ru' ? 'Описание' : 'Description'}</label>
+        <label>{t('tableDescription')}</label>
         <textarea
           rows={3}
-          placeholder={lang === 'ru' ? 'Необязательная заметка...' : 'Optional note...'}
+          placeholder={t('optionalNote')}
           value={form.description}
           onChange={(e) => set('description', e.target.value)}
         />
       </div>
+
+      {canAttachOnCreate && (
+        <div className={styles.field}>
+          <label>{t('attachments')}</label>
+          <div className={styles.attachCreateRow}>
+            <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()}>
+              {t('addAttachments')}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              hidden
+              accept="image/*,application/pdf"
+              multiple
+              onChange={(e) => {
+                addFiles(e.target.files)
+                e.target.value = ''
+              }}
+            />
+            <span className={styles.attachHint}>{t('attachmentsWillBeSavedTogether')}</span>
+          </div>
+          {!!selectedFiles.length && (
+            <div className={styles.selectedFiles}>
+              {selectedFiles.map((file, index) => (
+                <div key={`${file.name}-${index}`} className={styles.selectedFileItem}>
+                  <span>{file.name}</span>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => removeSelectedFile(index)}>
+                    ✕
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className={styles.recurringRow}>
         <label className={styles.checkLabel}>
@@ -153,11 +225,11 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
             checked={form.is_recurring}
             onChange={(e) => set('is_recurring', e.target.checked)}
           />
-          {lang === 'ru' ? 'Повторяется' : 'Recurring'}
+          {t('recurring')}
         </label>
         {form.is_recurring && (
           <div className={styles.field} style={{ flex: 1 }}>
-            <label>{lang === 'ru' ? 'Дата окончания (необязательно)' : 'End Date (optional)'}</label>
+            <label>{t('endDateOptional')}</label>
             <input
               type="date"
               value={form.recurring_end_date}
@@ -168,8 +240,8 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
       </div>
 
       <div className={styles.actions}>
-        <Button type="button" variant="secondary" onClick={onCancel}>{lang === 'ru' ? 'Отмена' : 'Cancel'}</Button>
-        <Button type="submit" loading={loading}>{lang === 'ru' ? 'Сохранить операцию' : 'Save Operation'}</Button>
+        <Button type="button" variant="secondary" onClick={onCancel}>{t('cancel')}</Button>
+        <Button type="submit" loading={loading}>{t('saveOperation')}</Button>
       </div>
     </form>
   )

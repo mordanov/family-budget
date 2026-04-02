@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { formatCurrency, formatDate, monthName, apiError } from '../src/utils/index'
+import {
+  apiError,
+  formatCurrency,
+  formatDate,
+  localDateTimeInputToIso,
+  monthName,
+  toLocalDateInput,
+  toLocalDateTimeInput,
+} from '../src/utils/index'
 
 describe('formatCurrency', () => {
   it('formats positive numbers', () => {
@@ -49,3 +57,20 @@ describe('apiError', () => {
     expect(apiError({})).toBe('Something went wrong')
   })
 })
+
+describe('local datetime helpers', () => {
+  it('formats ISO date for datetime-local input in local time', () => {
+    const result = toLocalDateTimeInput('2024-06-15T12:34:00Z')
+    expect(result).toMatch(/^2024-06-15T\d{2}:\d{2}$/)
+  })
+
+  it('formats ISO date for date input', () => {
+    expect(toLocalDateInput('2024-06-15T12:34:00Z')).toBe('2024-06-15')
+  })
+
+  it('converts local datetime input to iso string', () => {
+    expect(localDateTimeInputToIso('2024-06-15T12:34')).toContain('2024-06-15T')
+    expect(localDateTimeInputToIso('2024-06-15T12:34')).toContain(':34')
+  })
+})
+

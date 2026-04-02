@@ -12,6 +12,7 @@ class OperationBase(BaseModel):
     currency: str = Field(default="EUR", max_length=3)
     type: OperationType
     payment_type: PaymentType = PaymentType.card
+    payment_method_id: int | None = None
     description: str | None = None
     is_recurring: bool = False
     recurring_end_date: datetime | None = None
@@ -29,6 +30,7 @@ class OperationUpdate(BaseModel):
     currency: str | None = Field(None, max_length=3)
     type: OperationType | None = None
     payment_type: PaymentType | None = None
+    payment_method_id: int | None = None
     description: str | None = None
     is_recurring: bool | None = None
     recurring_end_date: datetime | None = None
@@ -74,8 +76,9 @@ class OperationFilter(BaseModel):
     date_to: datetime | None = None
     type: OperationType | None = None
     payment_type: PaymentType | None = None
+    payment_method_id: int | None = None
     category_id: int | None = None
     user_id: int | None = None
     is_recurring: bool | None = None
     page: int = Field(default=1, ge=1)
-    size: int = Field(default=20, ge=1, le=100)
+    size: int = Field(default=15, ge=1, le=100)

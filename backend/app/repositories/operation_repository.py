@@ -36,11 +36,12 @@ class OperationRepository(BaseRepository[Operation]):
         date_to: datetime | None = None,
         type: OperationType | None = None,
         payment_type=None,
+        payment_method_id: int | None = None,
         category_id: int | None = None,
         user_id: int | None = None,
         is_recurring: bool | None = None,
         skip: int = 0,
-        limit: int = 20,
+        limit: int = 15,
     ) -> tuple[list[Operation], int]:
         q = self._base_query()
 
@@ -50,7 +51,9 @@ class OperationRepository(BaseRepository[Operation]):
             q = q.where(Operation.operation_date <= date_to)
         if type:
             q = q.where(Operation.type == type)
-        if payment_type:
+        if payment_method_id:
+            q = q.where(Operation.payment_method_id == payment_method_id)
+        elif payment_type:
             q = q.where(Operation.payment_type == payment_type)
         if category_id:
             q = q.where(Operation.category_id == category_id)
@@ -162,7 +165,7 @@ class OperationRepository(BaseRepository[Operation]):
     ) -> list:
         q = (
             select(
-                Operation.payment_type,
+                PaymentMethod.key.label("payment_method_key"),
                 PaymentMethod.name.label("payment_method_name"),
                 Operation.type,
                 func.sum(Operation.amount).label("total"),
@@ -176,7 +179,7 @@ class OperationRepository(BaseRepository[Operation]):
                     Operation.operation_date <= date_to,
                 )
             )
-            .group_by(Operation.payment_type, PaymentMethod.name, Operation.type)
+            .group_by(PaymentMethod.key, PaymentMethod.name, Operation.type)
         )
         result = await self.db.execute(q)
         return result.all()

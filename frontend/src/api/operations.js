@@ -16,6 +16,19 @@ export const operationsApi = {
     return data
   },
 
+  createWithAttachments: async (payload, files = []) => {
+    const form = new FormData()
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '') return
+      form.append(key, value)
+    })
+    files.forEach((file) => form.append('files', file))
+    const { data } = await api.post('/operations/with-attachments', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data
+  },
+
   update: async (id, payload) => {
     const { data } = await api.patch(`/operations/${id}`, payload)
     return data

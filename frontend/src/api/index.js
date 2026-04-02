@@ -84,9 +84,20 @@ export const paymentMethodsApi = {
     const { data } = await api.get('/payment-methods/')
     return data
   },
+  get: async (id) => {
+    const { data } = await api.get(`/payment-methods/${id}`)
+    return data
+  },
+  create: async (payload) => {
+    const { data } = await api.post('/payment-methods/', payload)
+    return data
+  },
   update: async (id, payload) => {
     const { data } = await api.patch(`/payment-methods/${id}`, payload)
     return data
+  },
+  delete: async (id) => {
+    await api.delete(`/payment-methods/${id}`)
   },
 }
 

@@ -13,6 +13,7 @@ export default function PaymentMethodsPage() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null)
+  const [isCreate, setIsCreate] = useState(false)
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -32,19 +33,35 @@ export default function PaymentMethodsPage() {
     load()
   }, [])
 
+  const openCreate = () => {
+    setIsCreate(true)
+    setEditing(null)
+    setForm(EMPTY)
+  }
+
   const openEdit = (item) => {
+    setIsCreate(false)
     setEditing(item)
     setForm({ name: item.name })
   }
 
+  const closeModal = () => {
+    setIsCreate(false)
+    setEditing(null)
+    setForm(EMPTY)
+  }
+
   const handleSave = async (e) => {
     e.preventDefault()
-    if (!editing) return
     setSaving(true)
     setError(null)
     try {
-      await paymentMethodsApi.update(editing.id, { name: form.name.trim() })
-      setEditing(null)
+      if (isCreate) {
+        await paymentMethodsApi.create({ name: form.name.trim() })
+      } else if (editing) {
+        await paymentMethodsApi.update(editing.id, { name: form.name.trim() })
+      }
+      closeModal()
       await load()
     } catch (e) {
       setError(apiError(e))
@@ -53,14 +70,29 @@ export default function PaymentMethodsPage() {
     }
   }
 
+  const handleDelete = async (item) => {
+    if (!confirm(t('confirmDeletePaymentMethod'))) return
+    try {
+      setError(null)
+      await paymentMethodsApi.delete(item.id)
+      await load()
+    } catch (e) {
+      setError(apiError(e))
+    }
+  }
+
   return (
     <div>
       {error && <Alert type="error">{error}</Alert>}
 
+      <div className={styles.toolbar}>
+        <Button size="sm" onClick={openCreate}>{t('newPaymentMethod')}</Button>
+      </div>
+
       {loading ? (
         <div className={styles.center}><Spinner size={28} /></div>
       ) : items.length === 0 ? (
-        <EmptyState icon="💳" title={t('noData')} />
+        <EmptyState icon="💳" title={t('noPaymentMethods')} description={t('paymentMethodsSubtitle')} />
       ) : (
         <div className={styles.grid}>
           {items.map((item) => (
@@ -69,22 +101,23 @@ export default function PaymentMethodsPage() {
                 <p className={styles.name}>{item.name}</p>
                 <p className={styles.key}>{item.key}</p>
               </div>
-              <Button size="sm" variant="secondary" onClick={() => openEdit(item)}>
-                {t('edit')}
-              </Button>
+              <div className={styles.actions}>
+                <Button size="sm" variant="ghost" onClick={() => openEdit(item)}>{t('edit')}</Button>
+                <Button size="sm" variant="danger" onClick={() => handleDelete(item)}>{t('delete')}</Button>
+              </div>
             </Card>
           ))}
         </div>
       )}
 
       <Modal
-        open={!!editing}
-        onClose={() => setEditing(null)}
-        title={t('editPaymentMethod')}
+        open={isCreate || !!editing}
+        onClose={closeModal}
+        title={isCreate ? t('createPaymentMethod') : t('editPaymentMethod')}
         size="sm"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setEditing(null)}>{t('cancel')}</Button>
+            <Button variant="secondary" onClick={closeModal}>{t('cancel')}</Button>
             <Button type="submit" form="pm-form" loading={saving}>{t('save')}</Button>
           </>
         }

@@ -80,13 +80,14 @@
 }
 
 .actions { display: flex; gap: 6px; }
+.iconAction {
+  min-width: 34px;
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
 .attachmentsCell { text-align: center; font-weight: 600; }
 .typeCell :global(.badge) { white-space: nowrap; }
-.attachmentsHint {
-  margin-top: 14px;
-  color: var(--color-text-muted);
-  font-size: 13px;
-}
 
 .pagination {
   display: flex;

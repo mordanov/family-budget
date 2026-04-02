@@ -1,5 +1,7 @@
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from 'date-fns'
 
+const pad = (value) => String(value).padStart(2, '0')
+
 export const formatCurrency = (amount, currency = 'EUR') =>
   new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(Number(amount))
 
@@ -14,6 +16,21 @@ export const formatDateTime = (date) => {
   const d = typeof date === 'string' ? parseISO(date) : date
   return format(d, 'dd MMM yyyy, HH:mm')
 }
+
+export const toLocalDateTimeInput = (date = new Date()) => {
+  const d = typeof date === 'string' ? parseISO(date) : date
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+export const toLocalDateInput = (date) => {
+  if (!date) return ''
+  const d = typeof date === 'string' ? parseISO(date) : date
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+export const localDateTimeInputToIso = (value) => (value ? new Date(value).toISOString() : null)
 
 export const prevMonthRange = () => {
   const prev = subMonths(new Date(), 1)
@@ -31,12 +48,6 @@ export const currentMonthRange = () => ({
 export const monthName = (month, lang = 'en') =>
   new Date(2000, month - 1, 1).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US', { month: 'long' })
 
-export const PAYMENT_TYPES = [
-  { value: 'cash', label: 'Cash' },
-  { value: 'card', label: 'Card' },
-  { value: 'bank_transfer', label: 'Bank Transfer' },
-  { value: 'other', label: 'Other' },
-]
 
 export const OPERATION_TYPES = [
   { value: 'income', label: 'Income' },

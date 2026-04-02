@@ -1,7 +1,7 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.operation import Operation
+from app.models.operation import Operation, PaymentType
 from app.repositories.operation_repository import OperationRepository
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.payment_method_repository import PaymentMethodRepository
@@ -10,6 +10,7 @@ from app.schemas.operation import (
     OperationCreate, OperationUpdate, OperationResponse,
     OperationListResponse, OperationFilter,
 )
+from app.services.attachment_service import AttachmentService
 from app.services.balance_service import BalanceService
 
 
@@ -19,23 +20,40 @@ class OperationService:
         self.cat_repo = CategoryRepository(db)
         self.pm_repo = PaymentMethodRepository(db)
         self.user_repo = UserRepository(db)
+        self.attachment_service = AttachmentService(db)
         self.balance_service = BalanceService(db)
 
-    async def _resolve_payment_method_id(self, payment_type: str | None, fallback: int | None = None) -> int:
+    async def _resolve_payment_method(self, payment_type: str | None, payment_method_id: int | None = None) -> tuple[int, PaymentType]:
         await self.pm_repo.ensure_defaults()
-        if payment_type:
-            # Get the actual enum value
-            payment_type_str = payment_type.value if hasattr(payment_type, 'value') else str(payment_type)
-            pm = await self.pm_repo.get_by_key(payment_type_str)
-            if not pm:
+        pm = None
+        if payment_method_id is not None:
+            pm = await self.pm_repo.get_by_id(payment_method_id)
+            if not pm or not pm.is_active:
                 raise HTTPException(status_code=400, detail="Payment method not found")
-            return pm.id
-        if fallback is not None:
-            return fallback
-        card = await self.pm_repo.get_by_key("card")
-        if not card:
+        elif payment_type:
+            payment_type_str = payment_type.value if hasattr(payment_type, "value") else str(payment_type)
+            pm = await self.pm_repo.get_by_key(payment_type_str)
+            if not pm or not pm.is_active:
+                raise HTTPException(status_code=400, detail="Payment method not found")
+        else:
+            pm = await self.pm_repo.get_by_key("card")
+        if not pm:
             raise HTTPException(status_code=400, detail="Payment method not found")
-        return card.id
+        try:
+            legacy_payment_type = PaymentType(pm.key)
+        except ValueError:
+            legacy_payment_type = PaymentType.other
+        return pm.id, legacy_payment_type
+
+    async def _resolve_payment_method_for_update(
+        self,
+        op: Operation,
+        payment_type: str | None = None,
+        payment_method_id: int | None = None,
+    ) -> tuple[int, PaymentType]:
+        if payment_type is None and payment_method_id is None:
+            return op.payment_method_id, op.payment_type
+        return await self._resolve_payment_method(payment_type, payment_method_id)
 
     async def _validate_refs(self, category_id: int, user_id: int):
         cat = await self.cat_repo.get_by_id(category_id)
@@ -52,6 +70,7 @@ class OperationService:
             date_to=filters.date_to,
             type=filters.type,
             payment_type=filters.payment_type,
+            payment_method_id=filters.payment_method_id,
             category_id=filters.category_id,
             user_id=filters.user_id,
             is_recurring=filters.is_recurring,
@@ -76,9 +95,12 @@ class OperationService:
     async def create(self, data: OperationCreate) -> OperationResponse:
         await self._validate_refs(data.category_id, data.user_id)
         payload = data.model_dump()
-        payload["payment_method_id"] = await self._resolve_payment_method_id(
-            payload.pop("payment_type")
+        payment_method_id, payment_type = await self._resolve_payment_method(
+            payload.pop("payment_type", None),
+            payload.get("payment_method_id"),
         )
+        payload["payment_method_id"] = payment_method_id
+        payload["payment_type"] = payment_type
         op = Operation(**payload)
         op = await self.repo.create(op)
         op = await self.repo.get_by_id_with_relations(op.id)
@@ -86,6 +108,16 @@ class OperationService:
             op.operation_date.year, op.operation_date.month
         )
         return OperationResponse.model_validate(op)
+
+    async def create_with_attachments(
+        self, data: OperationCreate, files: list[UploadFile]
+    ) -> OperationResponse:
+        created = await self.create(data)
+        if files:
+            await self.attachment_service.upload_many(created.id, files)
+            op = await self.repo.get_by_id_with_relations(created.id)
+            return OperationResponse.model_validate(op)
+        return created
 
     async def update(self, op_id: int, data: OperationUpdate) -> OperationResponse:
         op = await self.repo.get_by_id_with_relations(op_id)
@@ -97,11 +129,14 @@ class OperationService:
             await self._validate_refs(op.category_id, data.user_id)
         old_year, old_month = op.operation_date.year, op.operation_date.month
         payload = data.model_dump(exclude_none=True)
-        if "payment_type" in payload:
-            payload["payment_method_id"] = await self._resolve_payment_method_id(
-                payload.pop("payment_type"),
-                fallback=op.payment_method_id,
+        if "payment_type" in payload or "payment_method_id" in payload:
+            payment_method_id, payment_type = await self._resolve_payment_method_for_update(
+                op,
+                payload.pop("payment_type", None),
+                payload.get("payment_method_id"),
             )
+            payload["payment_method_id"] = payment_method_id
+            payload["payment_type"] = payment_type
         for field, value in payload.items():
             setattr(op, field, value)
         await self.repo.db.flush()

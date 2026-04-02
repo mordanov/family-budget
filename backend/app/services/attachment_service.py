@@ -23,13 +23,9 @@ class AttachmentService:
         self.repo = AttachmentRepository(db)
         self.op_repo = OperationRepository(db)
 
-    async def upload(
+    async def _store_file(
         self, operation_id: int, file: UploadFile, description: str | None
-    ) -> AttachmentResponse:
-        op = await self.op_repo.get_by_id(operation_id)
-        if not op or op.deleted_at is not None:
-            raise HTTPException(status_code=404, detail="Operation not found")
-
+    ) -> tuple[Attachment, str]:
         if file.content_type not in ALLOWED_MIME_TYPES:
             raise HTTPException(
                 status_code=400,
@@ -62,7 +58,39 @@ class AttachmentService:
             operation_id=operation_id,
         )
         attachment = await self.repo.create(attachment)
+        return attachment, file_path
+
+    async def upload(
+        self, operation_id: int, file: UploadFile, description: str | None
+    ) -> AttachmentResponse:
+        op = await self.op_repo.get_by_id(operation_id)
+        if not op or op.deleted_at is not None:
+            raise HTTPException(status_code=404, detail="Operation not found")
+        attachment, _ = await self._store_file(operation_id, file, description)
         return AttachmentResponse.model_validate(attachment)
+
+    async def upload_many(
+        self, operation_id: int, files: list[UploadFile], description: str | None = None
+    ) -> list[AttachmentResponse]:
+        if not files:
+            return []
+        op = await self.op_repo.get_by_id(operation_id)
+        if not op or op.deleted_at is not None:
+            raise HTTPException(status_code=404, detail="Operation not found")
+
+        created_paths: list[str] = []
+        created_items: list[Attachment] = []
+        try:
+            for file in files:
+                attachment, file_path = await self._store_file(operation_id, file, description)
+                created_items.append(attachment)
+                created_paths.append(file_path)
+            return [AttachmentResponse.model_validate(item) for item in created_items]
+        except Exception:
+            for file_path in created_paths:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            raise
 
     async def get_by_operation(self, operation_id: int) -> list[AttachmentResponse]:
         attachments = await self.repo.get_by_operation(operation_id)

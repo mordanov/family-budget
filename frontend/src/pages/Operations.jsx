@@ -1,26 +1,51 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { operationsApi, attachmentsApi } from '../api/index'
+import { operationsApi } from '../api/index'
 import { Button, PageHeader, Badge, EmptyState, Alert, Spinner, Card } from '../components/ui/index'
 import Modal from '../components/ui/Modal'
 import OperationForm from '../components/operations/OperationForm'
 import AttachmentManager from '../components/operations/AttachmentManager'
 import { useI18n } from '../i18n'
-import { formatCurrency, formatDateTime, apiError } from '../utils/index'
-import { useCategories, useUsers } from '../hooks/index'
+import { formatCurrency, formatDateTime, apiError, toLocalDateInput, toLocalDateTimeInput } from '../utils/index'
+import { useCategories, usePaymentMethods, useUsers } from '../hooks/index'
 import styles from './Operations.module.css'
 
+function toFilterDateStart(value) {
+  return value ? new Date(`${value}T00:00:00`).toISOString() : undefined
+}
+
+function toFilterDateEnd(value) {
+  return value ? new Date(`${value}T23:59:59`).toISOString() : undefined
+}
+
+function mapOperationToInitial(op, { copy = false } = {}) {
+  return {
+    ...(copy ? {} : { id: op.id }),
+    amount: op.amount,
+    currency: op.currency,
+    type: op.type,
+    payment_method_id: op.payment_method?.id || op.payment_method_id || '',
+    description: op.description || '',
+    is_recurring: op.is_recurring,
+    recurring_end_date: op.recurring_end_date ? toLocalDateInput(op.recurring_end_date) : '',
+    operation_date: copy ? toLocalDateTimeInput(new Date()) : toLocalDateTimeInput(op.operation_date),
+    category_id: op.category?.id || op.category_id,
+    user_id: op.user?.id || op.user_id,
+  }
+}
+
 export default function OperationsPage() {
-  const { lang, t } = useI18n()
+  const { t } = useI18n()
   const [data, setData] = useState({ items: [], total: 0, page: 1, pages: 1 })
-  const [filters, setFilters] = useState({ page: 1, size: 20 })
+  const [filters, setFilters] = useState({ page: 1, size: 15 })
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState('create')
   const [editing, setEditing] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
-  const [detailOp, setDetailOp] = useState(null)
   const { categories } = useCategories()
   const { users } = useUsers()
+  const { paymentMethods } = usePaymentMethods()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -37,36 +62,34 @@ export default function OperationsPage() {
 
   useEffect(() => { load() }, [load])
 
-  const openCreate = () => { setEditing(null); setModalOpen(true) }
+  const openCreate = () => {
+    setModalMode('create')
+    setEditing(null)
+    setModalOpen(true)
+  }
   const openEdit = (op) => {
-    const init = {
-      ...op,
-      category_id: op.category.id,
-      user_id: op.user.id,
-      operation_date: op.operation_date?.slice(0, 16),
-      recurring_end_date: op.recurring_end_date?.slice(0, 10) || '',
-    }
-    setEditing(init)
+    setModalMode('edit')
+    setEditing(mapOperationToInitial(op))
+    setModalOpen(true)
+  }
+  const openCopy = (op) => {
+    setModalMode('copy')
+    setEditing(mapOperationToInitial(op, { copy: true }))
     setModalOpen(true)
   }
 
-  const handleSubmit = async (payload) => {
+  const handleSubmit = async (payload, { files = [] } = {}) => {
     setSubmitting(true)
     try {
-      if (editing?.id) {
+      if (modalMode === 'edit' && editing?.id) {
         await operationsApi.update(editing.id, payload)
-        setModalOpen(false)
+      } else if (files.length) {
+        await operationsApi.createWithAttachments(payload, files)
       } else {
-        const created = await operationsApi.create(payload)
-        const init = {
-          ...created,
-          category_id: created.category.id,
-          user_id: created.user.id,
-          operation_date: created.operation_date?.slice(0, 16),
-          recurring_end_date: created.recurring_end_date?.slice(0, 10) || '',
-        }
-        setEditing(init)
+        await operationsApi.create(payload)
       }
+      setEditing(null)
+      setModalOpen(false)
       await load()
     } catch (e) {
       throw e
@@ -112,22 +135,19 @@ export default function OperationsPage() {
           <option value="">{t('allUsers')}</option>
           {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
         </select>
-        <select onChange={(e) => setFilter('payment_type', e.target.value)} defaultValue="">
+        <select onChange={(e) => setFilter('payment_method_id', e.target.value)} defaultValue="">
           <option value="">{t('allPaymentTypes')}</option>
-          <option value="cash">{t('paymentCash')}</option>
-          <option value="card">{t('paymentCard')}</option>
-          <option value="bank_transfer">{t('paymentBankTransfer')}</option>
-          <option value="other">{t('paymentOther')}</option>
+          {paymentMethods.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
         <input
           type="date"
           placeholder={t('dateFrom')}
-          onChange={(e) => setFilter('date_from', e.target.value ? new Date(e.target.value).toISOString() : undefined)}
+          onChange={(e) => setFilter('date_from', toFilterDateStart(e.target.value))}
         />
         <input
           type="date"
           placeholder={t('dateTo')}
-          onChange={(e) => setFilter('date_to', e.target.value ? new Date(e.target.value + 'T23:59:59').toISOString() : undefined)}
+          onChange={(e) => setFilter('date_to', toFilterDateEnd(e.target.value))}
         />
       </Card>
 
@@ -175,8 +195,9 @@ export default function OperationsPage() {
                   </td>
                   <td data-label={t('tableActions')}>
                     <div className={styles.actions}>
-                      <Button size="sm" variant="ghost" onClick={() => openEdit(op)}>{t('edit')}</Button>
-                      <Button size="sm" variant="danger" onClick={() => handleDelete(op.id)}>{t('delete')}</Button>
+                      <Button size="sm" variant="ghost" className={styles.iconAction} title={t('copy')} aria-label={t('copy')} onClick={() => openCopy(op)}>⧉</Button>
+                      <Button size="sm" variant="ghost" className={styles.iconAction} title={t('edit')} aria-label={t('edit')} onClick={() => openEdit(op)}>✎</Button>
+                      <Button size="sm" variant="danger" className={styles.iconAction} title={t('delete')} aria-label={t('delete')} onClick={() => handleDelete(op.id)}>🗑</Button>
                     </div>
                   </td>
                 </tr>
@@ -204,23 +225,20 @@ export default function OperationsPage() {
       {/* Modal */}
       <Modal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editing ? t('operationsEditTitle') : t('operationsNewTitle')}
+        onClose={() => { setModalOpen(false); setEditing(null) }}
+        title={modalMode === 'edit' ? t('operationsEditTitle') : modalMode === 'copy' ? t('operationsCopyTitle') : t('operationsNewTitle')}
         size="lg"
       >
         <OperationForm
           initial={editing || {}}
           onSubmit={handleSubmit}
-          onCancel={() => setModalOpen(false)}
+          onCancel={() => { setModalOpen(false); setEditing(null) }}
           loading={submitting}
+          allowCreateAttachments
         />
-        {editing?.id ? (
+        {modalMode === 'edit' && editing?.id ? (
           <AttachmentManager operationId={editing.id} />
-        ) : (
-          <p className={styles.attachmentsHint}>
-            {t('saveOperationFirst')}
-          </p>
-        )}
+        ) : null}
       </Modal>
     </div>
   )
