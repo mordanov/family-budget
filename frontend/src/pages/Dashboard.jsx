@@ -7,7 +7,7 @@ import { Bar, Line, Doughnut } from 'react-chartjs-2'
 import { balancesApi, reportsApi } from '../api/index'
 import { Card, Spinner, PageHeader, EmptyState } from '../components/ui/index'
 import { useI18n } from '../i18n'
-import { formatCurrency, currentMonthRange } from '../utils/index'
+import { formatCurrency, currentMonthRange, monthName } from '../utils/index'
 import { useTimezone } from '../hooks/index'
 import styles from './Dashboard.module.css'
 
@@ -115,8 +115,11 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Expense by category */}
-      {report && <ExpenseByCategoryCard report={report} t={t} />}
+      {/* Bottom row: expense by category + by payment method */}
+      <div className={styles.bottomRow}>
+        {report && <ExpenseByCategoryCard report={report} t={t} />}
+        {report && <PaymentMethodCard report={report} t={t} />}
+      </div>
     </div>
   )
 }
@@ -174,6 +177,46 @@ function ExpenseByCategoryCard({ report, t }) {
             ))}
           </div>
         </div>
+      )}
+    </Card>
+  )
+}
+
+function PaymentMethodCard({ report, t }) {
+  const rows = (report.by_payment_type || [])
+    .filter((p) => Number(p.total_income) > 0 || Number(p.total_expense) > 0)
+    .sort((a, b) => Number(b.total_expense) - Number(a.total_expense))
+
+  return (
+    <Card>
+      <h3 className={styles.chartTitle}>{t('byPaymentType')}</h3>
+      {rows.length === 0 ? (
+        <EmptyState icon="💳" title={t('noData')} />
+      ) : (
+        <table className={styles.pmTable}>
+          <thead>
+            <tr>
+              <th>{t('payment')}</th>
+              <th className={styles.pmNum}>{t('income')}</th>
+              <th className={styles.pmNum}>{t('expense')}</th>
+              <th className={styles.pmNum}>{t('count')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((p) => (
+              <tr key={p.payment_type}>
+                <td>{p.payment_method_name}</td>
+                <td className={`${styles.pmNum} amount-income`}>
+                  {Number(p.total_income) > 0 ? `+${formatCurrency(p.total_income)}` : '—'}
+                </td>
+                <td className={`${styles.pmNum} amount-expense`}>
+                  {Number(p.total_expense) > 0 ? `-${formatCurrency(p.total_expense)}` : '—'}
+                </td>
+                <td className={`${styles.pmNum} ${styles.pmCount}`}>{p.count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </Card>
   )
