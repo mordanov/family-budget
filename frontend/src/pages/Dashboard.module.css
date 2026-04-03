@@ -41,7 +41,12 @@
   color: var(--color-text-muted);
 }
 
-.catList { display: flex; flex-direction: column; gap: 10px; }
-.catRow { display: flex; align-items: center; gap: 10px; font-size: 13px; font-family: var(--font-mono); }
+.expCatCard { margin-top: 0; }
+.expCatBody { display: grid; grid-template-columns: 280px 1fr; gap: 32px; align-items: start; }
+@media (max-width: 900px) { .expCatBody { grid-template-columns: 1fr; } }
+.expCatDonut { height: 260px; }
+.expCatList { display: flex; flex-direction: column; gap: 10px; align-self: center; }
+.expCatRow { display: flex; align-items: center; gap: 10px; font-size: 13px; font-family: var(--font-mono); }
+
 .catDot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .catName { flex: 1; font-family: var(--font-sans); }

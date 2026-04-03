@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
-  LineElement, PointElement, Title, Tooltip, Legend, Filler,
+  LineElement, PointElement, ArcElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js'
-import { Bar, Line } from 'react-chartjs-2'
+import { Bar, Line, Doughnut } from 'react-chartjs-2'
 import { balancesApi, reportsApi } from '../api/index'
 import { Card, Spinner, PageHeader, EmptyState } from '../components/ui/index'
 import { useI18n } from '../i18n'
-import { formatCurrency, currentMonthRange, monthName } from '../utils/index'
+import { formatCurrency, currentMonthRange } from '../utils/index'
 import { useTimezone } from '../hooks/index'
 import styles from './Dashboard.module.css'
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler)
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend, Filler)
 
 const CHART_OPTS = {
   responsive: true,
@@ -28,7 +28,6 @@ export default function DashboardPage() {
   const timezone = useTimezone()
   const [balances, setBalances] = useState([])
   const [report, setReport] = useState(null)
-  const [forecast, setForecast] = useState(null)
   const [daily, setDaily] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -37,12 +36,10 @@ export default function DashboardPage() {
     Promise.all([
       balancesApi.list(),
       reportsApi.get(range),
-      reportsApi.forecast(),
       reportsApi.dailyBalance(range),
-    ]).then(([b, r, f, d]) => {
+    ]).then(([b, r, d]) => {
       setBalances(b.slice(0, 6))
       setReport(r)
-      setForecast(f)
       setDaily(d.items || [])
     }).finally(() => setLoading(false))
   }, [timezone])
@@ -118,61 +115,67 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Forecast + Category breakdown */}
-      <div className={styles.bottomRow}>
-        {forecast && (
-          <Card>
-            <h3 className={styles.chartTitle}>
-              {t('nextMonthForecast')} — {monthName(forecast.month, lang)} {forecast.year}
-            </h3>
-            <div className={styles.forecastSummary}>
-              <span className={styles.forecastIncome}>
-                +{formatCurrency(forecast.total_estimated_income)}
-              </span>
-              <span className={styles.forecastExpense}>
-                -{formatCurrency(forecast.total_estimated_expense)}
-              </span>
-              <span className={`${styles.forecastNet} ${Number(forecast.estimated_net) >= 0 ? styles.pos : styles.neg}`}>
-                {t('net')}: {formatCurrency(forecast.estimated_net)}
-              </span>
-            </div>
-            <div className={styles.forecastList}>
-              {forecast.items.slice(0, 8).map((item, i) => (
-                <div key={i} className={styles.forecastItem}>
-                  <span className={styles.forecastCat}>{item.category_name}</span>
-                  <span className={styles.forecastSource}>{item.source === 'recurring' ? t('sourceRecurring') : t('sourceAverage')}</span>
-                  <span className={item.type === 'income' ? 'amount-income' : 'amount-expense'}>
-                    {item.type === 'income' ? '+' : '-'}{formatCurrency(item.estimated_amount)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {report && (
-          <Card>
-            <h3 className={styles.chartTitle}>{t('currentMonthByCategory')}</h3>
-            <div className={styles.catList}>
-              {(report.by_category || []).slice(0, 8).map((cat) => (
-                <div key={cat.category_id} className={styles.catRow}>
-                  <span
-                    className={styles.catDot}
-                    style={{ background: cat.category_color || '#9E9E9E' }}
-                  />
-                  <span className={styles.catName}>{cat.category_name}</span>
-                  <span className="amount-expense">-{formatCurrency(cat.total_expense)}</span>
-                  <span className="amount-income">+{formatCurrency(cat.total_income)}</span>
-                </div>
-              ))}
-              {!report.by_category?.length && (
-                <EmptyState icon="🏷" title={t('noCategoryData')} />
-              )}
-            </div>
-          </Card>
-        )}
-      </div>
+      {/* Expense by category */}
+      {report && <ExpenseByCategoryCard report={report} t={t} />}
     </div>
+  )
+}
+
+const COLORS = [
+  '#6c8fff','#3ecf8e','#f5633a','#f5a623','#a78bfa',
+  '#38bdf8','#fb7185','#34d399','#fbbf24','#60a5fa',
+]
+
+const DONUT_OPTS = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { position: 'right', labels: { color: '#7b82a0', font: { family: 'DM Sans', size: 12 }, boxWidth: 12, padding: 10 } },
+    tooltip: {
+      callbacks: {
+        label: (ctx) => ` ${ctx.label}: ${new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(ctx.parsed)}`,
+      },
+    },
+  },
+  cutout: '65%',
+}
+
+function ExpenseByCategoryCard({ report, t }) {
+  const expCats = (report.by_category || [])
+    .filter((c) => Number(c.total_expense) > 0)
+    .sort((a, b) => Number(b.total_expense) - Number(a.total_expense))
+
+  const donutData = {
+    labels: expCats.map((c) => c.category_name),
+    datasets: [{
+      data: expCats.map((c) => Number(c.total_expense)),
+      backgroundColor: expCats.map((c, i) => c.category_color || COLORS[i % COLORS.length]),
+      borderWidth: 0,
+    }],
+  }
+
+  return (
+    <Card className={styles.expCatCard}>
+      <h3 className={styles.chartTitle}>{t('currentMonthByCategory')}</h3>
+      {expCats.length === 0 ? (
+        <EmptyState icon="🏷" title={t('noCategoryData')} />
+      ) : (
+        <div className={styles.expCatBody}>
+          <div className={styles.expCatDonut}>
+            <Doughnut data={donutData} options={DONUT_OPTS} />
+          </div>
+          <div className={styles.expCatList}>
+            {expCats.map((cat, i) => (
+              <div key={cat.category_id} className={styles.expCatRow}>
+                <span className={styles.catDot} style={{ background: cat.category_color || COLORS[i % COLORS.length] }} />
+                <span className={styles.catName}>{cat.category_name}</span>
+                <span className="amount-expense">-{formatCurrency(cat.total_expense)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
   )
 }
 
