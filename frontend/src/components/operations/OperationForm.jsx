@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react'
-import { useCategories, usePaymentMethods, useUsers } from '../../hooks/index'
+import { useCategories, usePaymentMethods, useUsers, useTimezone } from '../../hooks/index'
 import { Button, Alert } from '../ui/index'
 import {
   OPERATION_TYPES,
@@ -11,7 +11,7 @@ import {
 import { useI18n } from '../../i18n'
 import styles from './OperationForm.module.css'
 
-const createEmpty = () => ({
+const createEmpty = (timezone = 'UTC') => ({
   amount: '',
   currency: 'EUR',
   type: 'expense',
@@ -19,25 +19,26 @@ const createEmpty = () => ({
   description: '',
   is_recurring: false,
   recurring_end_date: '',
-  operation_date: toLocalDateTimeInput(new Date()),
+  operation_date: toLocalDateTimeInput(new Date(), timezone),
   category_id: '',
   user_id: '',
 })
 
-const normalizeInitial = (initial = {}) => ({
-  ...createEmpty(),
+const normalizeInitial = (initial = {}, timezone = 'UTC') => ({
+  ...createEmpty(timezone),
   ...initial,
   payment_method_id: initial.payment_method_id || initial.payment_method?.id || '',
   operation_date: initial.operation_date
-    ? toLocalDateTimeInput(initial.operation_date)
-    : toLocalDateTimeInput(new Date()),
-  recurring_end_date: initial.recurring_end_date ? toLocalDateInput(initial.recurring_end_date) : '',
+    ? toLocalDateTimeInput(initial.operation_date, timezone)
+    : toLocalDateTimeInput(new Date(), timezone),
+  recurring_end_date: initial.recurring_end_date ? toLocalDateInput(initial.recurring_end_date, timezone) : '',
 })
 
 export default function OperationForm({ initial = {}, onSubmit, onCancel, loading, allowCreateAttachments = false }) {
   const { t } = useI18n()
+  const timezone = useTimezone()
   const fileInputRef = useRef(null)
-  const [form, setForm] = useState(normalizeInitial(initial))
+  const [form, setForm] = useState(() => normalizeInitial(initial, timezone))
   const [selectedFiles, setSelectedFiles] = useState([])
   const [error, setError] = useState(null)
   const { categories } = useCategories()
@@ -49,9 +50,9 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
   const operationTypes = useMemo(() => OPERATION_TYPES, [])
 
   useEffect(() => {
-    setForm(normalizeInitial(initial))
+    setForm(normalizeInitial(initial, timezone))
     setSelectedFiles([])
-  }, [initial])
+  }, [initial, timezone])
 
   useEffect(() => {
     if (categories.length && !form.category_id) {
@@ -89,9 +90,9 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
         category_id: parseInt(form.category_id),
         user_id: parseInt(form.user_id),
         payment_method_id: parseInt(form.payment_method_id),
-        operation_date: localDateTimeInputToIso(form.operation_date),
+        operation_date: localDateTimeInputToIso(form.operation_date, timezone),
         recurring_end_date: form.recurring_end_date
-          ? new Date(`${form.recurring_end_date}T00:00:00`).toISOString()
+          ? localDateTimeInputToIso(`${form.recurring_end_date}T00:00:00`, timezone)
           : null,
       }
       await onSubmit(payload, { files: selectedFiles })

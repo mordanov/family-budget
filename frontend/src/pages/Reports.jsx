@@ -8,7 +8,9 @@ import { reportsApi } from '../api/index'
 import { Card, PageHeader, Spinner, EmptyState, Button, Alert } from '../components/ui/index'
 import { useI18n } from '../i18n'
 import { formatCurrency, prevMonthRange, monthName, apiError } from '../utils/index'
-import { format, parseISO, startOfMonth, endOfMonth, subMonths } from 'date-fns'
+import { useTimezone } from '../hooks/index'
+import { fromZonedTime, toZonedTime } from 'date-fns-tz'
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns'
 import styles from './Reports.module.css'
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
@@ -38,7 +40,8 @@ const COLORS = [
 
 export default function ReportsPage() {
   const { lang, t } = useI18n()
-  const prev = prevMonthRange()
+  const timezone = useTimezone()
+  const prev = prevMonthRange(timezone)
   const [dateFrom, setDateFrom] = useState(prev.date_from.slice(0,10))
   const [dateTo, setDateTo]     = useState(prev.date_to.slice(0,10))
   const [report, setReport]     = useState(null)
@@ -51,8 +54,8 @@ export default function ReportsPage() {
     try {
       const [r, f] = await Promise.all([
         reportsApi.get({
-          date_from: new Date(dateFrom).toISOString(),
-          date_to:   new Date(dateTo + 'T23:59:59').toISOString(),
+          date_from: fromZonedTime(new Date(`${dateFrom}T00:00:00`), timezone).toISOString(),
+          date_to:   fromZonedTime(new Date(`${dateTo}T23:59:59`), timezone).toISOString(),
         }),
         reportsApi.forecast(),
       ])
@@ -64,8 +67,9 @@ export default function ReportsPage() {
   useEffect(() => { load() }, []) // eslint-disable-line
 
   const setPreset = (months) => {
-    const to   = endOfMonth(subMonths(new Date(), months - 1))
-    const from = startOfMonth(subMonths(new Date(), months - 1))
+    const nowZoned = toZonedTime(new Date(), timezone)
+    const to   = endOfMonth(subMonths(nowZoned, months - 1))
+    const from = startOfMonth(subMonths(nowZoned, months - 1))
     setDateFrom(format(from, 'yyyy-MM-dd'))
     setDateTo(format(to, 'yyyy-MM-dd'))
   }

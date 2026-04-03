@@ -1,3 +1,5 @@
+import zoneinfo
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,6 +48,12 @@ class UserService:
             user.hashed_password = get_password_hash(data.password)
         if data.is_active is not None:
             user.is_active = data.is_active
+        if data.timezone is not None:
+            try:
+                zoneinfo.ZoneInfo(data.timezone)
+            except zoneinfo.ZoneInfoNotFoundError:
+                raise HTTPException(status_code=400, detail=f"Unknown timezone: {data.timezone}")
+            user.timezone = data.timezone
         await self.repo.db.flush()
         await self.repo.db.refresh(user)
         return UserResponse.model_validate(user)

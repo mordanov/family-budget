@@ -3,10 +3,12 @@ import { attachmentsApi } from '../../api/index'
 import { Alert, Button, Spinner } from '../ui/index'
 import { apiError, formatDateTime } from '../../utils'
 import { useI18n } from '../../i18n'
+import { useTimezone } from '../../hooks/index'
 import styles from './AttachmentManager.module.css'
 
 export default function AttachmentManager({ operationId }) {
   const { t } = useI18n()
+  const timezone = useTimezone()
   const inputRef = useRef(null)
   const cameraRef = useRef(null)
   const [items, setItems] = useState([])
@@ -117,7 +119,7 @@ export default function AttachmentManager({ operationId }) {
               <a href={item.public_url} target="_blank" rel="noreferrer" className={styles.link}>
                 {item.mime_type.startsWith('image/') ? '🖼️' : '📄'} {item.original_filename}
               </a>
-              <div className={styles.meta}>{formatDateTime(item.created_at)}</div>
+              <div className={styles.meta}>{formatDateTime(item.created_at, timezone)}</div>
               <div className={styles.actions}>
                 <Button size="sm" variant="ghost" onClick={() => window.open(item.public_url, '_blank')}>
                   Open

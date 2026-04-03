@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { categoriesApi, paymentMethodsApi, usersApi } from '../api/index'
+import { useAuthStore } from '../store/authStore'
+
+export function useTimezone() {
+  const user = useAuthStore((s) => s.user)
+  return user?.timezone || 'UTC'
+}
 
 export function useAsync(asyncFn, deps = []) {
   const [state, setState] = useState({ data: null, loading: true, error: null })

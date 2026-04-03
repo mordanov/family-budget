@@ -37,5 +37,10 @@ export const useAuthStore = create((set) => ({
     set({ user: null, token: null, error: null })
   },
 
+  updateUser: (updatedUser) => {
+    localStorage.setItem('user', JSON.stringify(updatedUser))
+    set({ user: updatedUser })
+  },
+
   clearError: () => set({ error: null }),
 }))

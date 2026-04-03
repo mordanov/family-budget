@@ -6,18 +6,19 @@ import OperationForm from '../components/operations/OperationForm'
 import AttachmentManager from '../components/operations/AttachmentManager'
 import { useI18n } from '../i18n'
 import { formatCurrency, formatDateTime, apiError, toLocalDateInput, toLocalDateTimeInput } from '../utils/index'
-import { useCategories, usePaymentMethods, useUsers } from '../hooks/index'
+import { fromZonedTime } from 'date-fns-tz'
+import { useCategories, usePaymentMethods, useUsers, useTimezone } from '../hooks/index'
 import styles from './Operations.module.css'
 
-function toFilterDateStart(value) {
-  return value ? new Date(`${value}T00:00:00`).toISOString() : undefined
+function toFilterDateStart(value, timezone) {
+  return value ? fromZonedTime(new Date(`${value}T00:00:00`), timezone).toISOString() : undefined
 }
 
-function toFilterDateEnd(value) {
-  return value ? new Date(`${value}T23:59:59`).toISOString() : undefined
+function toFilterDateEnd(value, timezone) {
+  return value ? fromZonedTime(new Date(`${value}T23:59:59`), timezone).toISOString() : undefined
 }
 
-function mapOperationToInitial(op, { copy = false } = {}) {
+function mapOperationToInitial(op, timezone, { copy = false } = {}) {
   return {
     ...(copy ? {} : { id: op.id }),
     amount: op.amount,
@@ -26,8 +27,8 @@ function mapOperationToInitial(op, { copy = false } = {}) {
     payment_method_id: op.payment_method?.id || op.payment_method_id || '',
     description: op.description || '',
     is_recurring: op.is_recurring,
-    recurring_end_date: op.recurring_end_date ? toLocalDateInput(op.recurring_end_date) : '',
-    operation_date: copy ? toLocalDateTimeInput(new Date()) : toLocalDateTimeInput(op.operation_date),
+    recurring_end_date: op.recurring_end_date ? toLocalDateInput(op.recurring_end_date, timezone) : '',
+    operation_date: copy ? toLocalDateTimeInput(new Date(), timezone) : toLocalDateTimeInput(op.operation_date, timezone),
     category_id: op.category?.id || op.category_id,
     user_id: op.user?.id || op.user_id,
   }
@@ -35,6 +36,7 @@ function mapOperationToInitial(op, { copy = false } = {}) {
 
 export default function OperationsPage() {
   const { t } = useI18n()
+  const timezone = useTimezone()
   const [data, setData] = useState({ items: [], total: 0, page: 1, pages: 1 })
   const [filters, setFilters] = useState({ page: 1, size: 15 })
   const [loading, setLoading] = useState(true)
@@ -69,12 +71,12 @@ export default function OperationsPage() {
   }
   const openEdit = (op) => {
     setModalMode('edit')
-    setEditing(mapOperationToInitial(op))
+    setEditing(mapOperationToInitial(op, timezone))
     setModalOpen(true)
   }
   const openCopy = (op) => {
     setModalMode('copy')
-    setEditing(mapOperationToInitial(op, { copy: true }))
+    setEditing(mapOperationToInitial(op, timezone, { copy: true }))
     setModalOpen(true)
   }
 
@@ -142,12 +144,12 @@ export default function OperationsPage() {
         <input
           type="date"
           placeholder={t('dateFrom')}
-          onChange={(e) => setFilter('date_from', toFilterDateStart(e.target.value))}
+          onChange={(e) => setFilter('date_from', toFilterDateStart(e.target.value, timezone))}
         />
         <input
           type="date"
           placeholder={t('dateTo')}
-          onChange={(e) => setFilter('date_to', toFilterDateEnd(e.target.value))}
+          onChange={(e) => setFilter('date_to', toFilterDateEnd(e.target.value, timezone))}
         />
       </Card>
 
@@ -175,7 +177,7 @@ export default function OperationsPage() {
             <tbody>
               {data.items.map((op) => (
                 <tr key={op.id} className={styles.row}>
-                  <td data-label={t('tableDate')} className={styles.date}>{formatDateTime(op.operation_date)}</td>
+                  <td data-label={t('tableDate')} className={styles.date}>{formatDateTime(op.operation_date, timezone)}</td>
                   <td data-label={t('tableType')} className={styles.typeCell}><Badge type={op.type} /></td>
                   <td data-label={t('tableAmount')} className={`${styles.amount} ${op.type === 'income' ? 'amount-income' : 'amount-expense'}`}>
                     {op.type === 'income' ? '+' : '-'}{formatCurrency(op.amount)}

@@ -4,12 +4,14 @@ import { Button, Card, PageHeader, EmptyState, Alert, Spinner } from '../compone
 import { useI18n } from '../i18n'
 import Modal from '../components/ui/Modal'
 import { formatDate, apiError } from '../utils/index'
+import { useTimezone } from '../hooks/index'
 import styles from './Users.module.css'
 
 const EMPTY = { name: '', email: '', password: '' }
 
 export default function UsersPage() {
   const { t } = useI18n()
+  const timezone = useTimezone()
   const [users, setUsers]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [modalOpen, setModal]   = useState(false)
@@ -72,7 +74,7 @@ export default function UsersPage() {
               <div className={styles.info}>
                 <span className={styles.name}>{u.name}</span>
                 <span className={styles.email}>{u.email}</span>
-                <span className={styles.since}>{t('since', { date: formatDate(u.created_at) })}</span>
+                <span className={styles.since}>{t('since', { date: formatDate(u.created_at, timezone) })}</span>
               </div>
               <div className={`${styles.status} ${u.is_active ? styles.active : styles.inactive}`}>
                 {u.is_active ? t('active') : t('inactive')}

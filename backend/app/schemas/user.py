@@ -16,11 +16,13 @@ class UserUpdate(BaseModel):
     email: EmailStr | None = None
     password: str | None = Field(None, min_length=6)
     is_active: bool | None = None
+    timezone: str | None = Field(None, min_length=1, max_length=50)
 
 
 class UserResponse(UserBase):
     id: int
     is_active: bool
+    timezone: str
     created_at: datetime
     updated_at: datetime
 

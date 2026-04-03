@@ -36,6 +36,10 @@ export const usersApi = {
     const { data } = await api.get('/users/me')
     return data
   },
+  updateMe: async (id, payload) => {
+    const { data } = await api.patch(`/users/${id}`, payload)
+    return data
+  },
   create: async (payload) => {
     const { data } = await api.post('/users/', payload)
     return data

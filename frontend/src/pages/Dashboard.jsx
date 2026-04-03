@@ -8,6 +8,7 @@ import { balancesApi, reportsApi } from '../api/index'
 import { Card, Spinner, PageHeader, EmptyState } from '../components/ui/index'
 import { useI18n } from '../i18n'
 import { formatCurrency, currentMonthRange, monthName } from '../utils/index'
+import { useTimezone } from '../hooks/index'
 import styles from './Dashboard.module.css'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler)
@@ -24,6 +25,7 @@ const CHART_OPTS = {
 
 export default function DashboardPage() {
   const { lang, t } = useI18n()
+  const timezone = useTimezone()
   const [balances, setBalances] = useState([])
   const [report, setReport] = useState(null)
   const [forecast, setForecast] = useState(null)
@@ -31,7 +33,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const range = currentMonthRange()
+    const range = currentMonthRange(timezone)
     Promise.all([
       balancesApi.list(),
       reportsApi.get(range),
@@ -43,7 +45,7 @@ export default function DashboardPage() {
       setForecast(f)
       setDaily(d.items || [])
     }).finally(() => setLoading(false))
-  }, [])
+  }, [timezone])
 
   if (loading) return (
     <div className={styles.loading}><Spinner size={32} /></div>

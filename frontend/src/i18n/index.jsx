@@ -182,6 +182,11 @@ const DICT = {
     notFoundText: 'The page does not exist or has been moved.',
     goOperations: 'Go to Operations',
     goLogin: 'Go to Sign In',
+    // Profile / timezone
+    settingsProfileTitle: 'Profile',
+    timezoneLabel: 'Time Zone',
+    timezoneSaved: 'Time zone saved',
+    timezoneSaveError: 'Failed to save time zone',
   },
   ru: {
     appName: 'Семейный бюджет',
@@ -364,6 +369,11 @@ const DICT = {
     notFoundText: 'Страница не существует или была перемещена.',
     goOperations: 'Перейти к операциям',
     goLogin: 'Перейти ко входу',
+    // Profile / timezone
+    settingsProfileTitle: 'Профиль',
+    timezoneLabel: 'Часовой пояс',
+    timezoneSaved: 'Часовой пояс сохранён',
+    timezoneSaveError: 'Не удалось сохранить часовой пояс',
   },
 }
 
