@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models.user import User
 from app.models.category import Category
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 
 DEFAULT_CATEGORIES = [
@@ -61,16 +61,14 @@ async def seed(db: AsyncSession) -> None:
         else:
             print(f"  · User already exists: {u['email']}")
 
-    # ── Default categories ─────────────────────────────────────────────────────
-    for cat_data in DEFAULT_CATEGORIES:
-        result = await db.execute(select(Category).where(Category.name == cat_data["name"]))
-        existing = result.scalar_one_or_none()
-        if not existing:
-            cat = Category(**cat_data)
-            db.add(cat)
+    # ── Default categories (only if table is empty) ────────────────────────────
+    cat_count = await db.scalar(select(func.count()).select_from(Category))
+    if cat_count == 0:
+        for cat_data in DEFAULT_CATEGORIES:
+            db.add(Category(**cat_data))
             print(f"  ✓ Created category: {cat_data['name']}")
-        else:
-            print(f"  · Category already exists: {cat_data['name']}")
+    else:
+        print(f"  · Categories already exist ({cat_count}), skipping.")
 
     await db.commit()
     print("\n✅ Seed complete.")

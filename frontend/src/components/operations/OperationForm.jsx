@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react'
 import { useCategories, usePaymentMethods, useUsers, useTimezone } from '../../hooks/index'
+import { useAuthStore } from '../../store/authStore'
 import { Button, Alert } from '../ui/index'
 import {
   OPERATION_TYPES,
@@ -37,6 +38,7 @@ const normalizeInitial = (initial = {}, timezone = 'UTC') => ({
 export default function OperationForm({ initial = {}, onSubmit, onCancel, loading, allowCreateAttachments = false }) {
   const { t } = useI18n()
   const timezone = useTimezone()
+  const currentUserId = useAuthStore((s) => s.user?.id)
   const fileInputRef = useRef(null)
   const [form, setForm] = useState(() => normalizeInitial(initial, timezone))
   const [selectedFiles, setSelectedFiles] = useState([])
@@ -60,13 +62,14 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
       setForm((f) => ({ ...f, category_id: def?.id || '' }))
     }
     if (users.length && !form.user_id) {
-      setForm((f) => ({ ...f, user_id: users[0]?.id || '' }))
+      const defaultUser = users.find((u) => u.id === currentUserId) || users[0]
+      setForm((f) => ({ ...f, user_id: defaultUser?.id || '' }))
     }
     if (paymentMethods.length && !form.payment_method_id) {
       const preferred = paymentMethods.find((item) => item.key === 'card') || paymentMethods[0]
       setForm((f) => ({ ...f, payment_method_id: preferred?.id || '' }))
     }
-  }, [categories, users, paymentMethods, form.category_id, form.user_id, form.payment_method_id])
+  }, [categories, users, paymentMethods, form.category_id, form.user_id, form.payment_method_id, currentUserId])
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }))
 
