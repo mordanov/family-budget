@@ -1,10 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { attachmentsApi } from '../../api/index'
+import {
+  isKitchenConfigured,
+  isAttachmentSent,
+  markAttachmentSent,
+  sendReceiptToKitchen,
+} from '../../api/kitchenReceiptApi'
 import { Alert, Button, Spinner } from '../ui/index'
 import { apiError, formatDateTime } from '../../utils'
 import { useI18n } from '../../i18n'
 import { useTimezone } from '../../hooks/index'
 import styles from './AttachmentManager.module.css'
+
+const kitchenEnabled = isKitchenConfigured()
 
 export default function AttachmentManager({ operationId }) {
   const { t } = useI18n()
@@ -16,12 +24,23 @@ export default function AttachmentManager({ operationId }) {
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [error, setError] = useState(null)
+  // { [attachmentId]: 'sending' | 'sent' | 'error' }
+  const [kitchenState, setKitchenState] = useState({})
 
   const load = async () => {
     if (!operationId) return
     setLoading(true)
     try {
-      setItems(await attachmentsApi.listByOperation(operationId))
+      const fetched = await attachmentsApi.listByOperation(operationId)
+      setItems(fetched)
+      // Pre-populate kitchen state for already-sent attachments (from localStorage)
+      if (kitchenEnabled) {
+        const preloaded = {}
+        fetched.forEach((item) => {
+          if (isAttachmentSent(item.id)) preloaded[item.id] = 'sent'
+        })
+        setKitchenState((prev) => ({ ...prev, ...preloaded }))
+      }
     } catch (e) {
       setError(apiError(e))
     } finally {
@@ -58,6 +77,27 @@ export default function AttachmentManager({ operationId }) {
     } catch (e) {
       setError(apiError(e))
     }
+  }
+
+  const sendToKitchen = async (item) => {
+    setKitchenState((prev) => ({ ...prev, [item.id]: 'sending' }))
+    setError(null)
+    try {
+      await sendReceiptToKitchen(item.public_url)
+      markAttachmentSent(item.id)
+      setKitchenState((prev) => ({ ...prev, [item.id]: 'sent' }))
+    } catch (e) {
+      setKitchenState((prev) => ({ ...prev, [item.id]: 'error' }))
+      setError(e.message || t('sendToKitchenError'))
+    }
+  }
+
+  const kitchenButtonLabel = (id) => {
+    const state = kitchenState[id]
+    if (state === 'sending') return t('sendToKitchenSending')
+    if (state === 'sent') return t('sendToKitchenSent')
+    if (state === 'error') return t('sendToKitchenError')
+    return t('sendToKitchen')
   }
 
   return (
@@ -124,6 +164,17 @@ export default function AttachmentManager({ operationId }) {
                 <Button size="sm" variant="ghost" onClick={() => window.open(item.public_url, '_blank')}>
                   Open
                 </Button>
+                {kitchenEnabled && item.mime_type.startsWith('image/') && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    loading={kitchenState[item.id] === 'sending'}
+                    disabled={kitchenState[item.id] === 'sent' || kitchenState[item.id] === 'sending'}
+                    onClick={() => sendToKitchen(item)}
+                  >
+                    {kitchenButtonLabel(item.id)}
+                  </Button>
+                )}
                 <Button size="sm" variant="danger" onClick={() => removeItem(item.id)}>
                   Delete
                 </Button>

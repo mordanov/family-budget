@@ -36,6 +36,9 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-/api/v1}
+        VITE_KITCHEN_API_URL: ${VITE_KITCHEN_API_URL:-}
+        VITE_KITCHEN_SERVICE_USER: ${VITE_KITCHEN_SERVICE_USER:-}
+        VITE_KITCHEN_SERVICE_PASSWORD: ${VITE_KITCHEN_SERVICE_PASSWORD:-}
     restart: unless-stopped
     expose:
       - "80"
