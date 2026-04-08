@@ -90,6 +90,16 @@ export default function AttachmentManager({ operationId }) {
     }
   }
 
+  const resetKitchenSent = async (item) => {
+    setError(null)
+    try {
+      await attachmentsApi.resetKitchenSent(item.id)
+      setKitchenState((prev) => ({ ...prev, [item.id]: undefined }))
+    } catch (e) {
+      setError(apiError(e))
+    }
+  }
+
   const kitchenButtonLabel = (id) => {
     const state = kitchenState[id]
     if (state === 'sending') return t('sendToKitchenSending')
@@ -163,15 +173,27 @@ export default function AttachmentManager({ operationId }) {
                   Open
                 </Button>
                 {kitchenEnabled && item.mime_type.startsWith('image/') && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    loading={kitchenState[item.id] === 'sending'}
-                    disabled={kitchenState[item.id] === 'sent' || kitchenState[item.id] === 'sending'}
-                    onClick={() => sendToKitchen(item)}
-                  >
-                    {kitchenButtonLabel(item.id)}
-                  </Button>
+                  <>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      loading={kitchenState[item.id] === 'sending'}
+                      disabled={kitchenState[item.id] === 'sent' || kitchenState[item.id] === 'sending'}
+                      onClick={() => sendToKitchen(item)}
+                    >
+                      {kitchenButtonLabel(item.id)}
+                    </Button>
+                    {kitchenState[item.id] === 'sent' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => resetKitchenSent(item)}
+                        title={t('resendToKitchen')}
+                      >
+                        ↺
+                      </Button>
+                    )}
+                  </>
                 )}
                 <Button size="sm" variant="danger" onClick={() => removeItem(item.id)}>
                   Delete
