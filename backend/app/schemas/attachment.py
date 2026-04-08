@@ -13,5 +13,6 @@ class AttachmentResponse(BaseModel):
     operation_id: int
     public_url: str
     created_at: datetime
+    kitchen_sent_at: datetime | None
 
     model_config = {"from_attributes": True}

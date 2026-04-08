@@ -2,8 +2,6 @@ import React, { useEffect, useRef, useState } from 'react'
 import { attachmentsApi } from '../../api/index'
 import {
   isKitchenConfigured,
-  isAttachmentSent,
-  markAttachmentSent,
   sendReceiptToKitchen,
 } from '../../api/kitchenReceiptApi'
 import { Alert, Button, Spinner } from '../ui/index'
@@ -33,11 +31,11 @@ export default function AttachmentManager({ operationId }) {
     try {
       const fetched = await attachmentsApi.listByOperation(operationId)
       setItems(fetched)
-      // Pre-populate kitchen state for already-sent attachments (from localStorage)
+      // Pre-populate kitchen state for already-sent attachments (from DB)
       if (kitchenEnabled) {
         const preloaded = {}
         fetched.forEach((item) => {
-          if (isAttachmentSent(item.id)) preloaded[item.id] = 'sent'
+          if (item.kitchen_sent_at) preloaded[item.id] = 'sent'
         })
         setKitchenState((prev) => ({ ...prev, ...preloaded }))
       }
@@ -84,7 +82,7 @@ export default function AttachmentManager({ operationId }) {
     setError(null)
     try {
       await sendReceiptToKitchen(item.public_url)
-      markAttachmentSent(item.id)
+      await attachmentsApi.markKitchenSent(item.id)
       setKitchenState((prev) => ({ ...prev, [item.id]: 'sent' }))
     } catch (e) {
       setKitchenState((prev) => ({ ...prev, [item.id]: 'error' }))

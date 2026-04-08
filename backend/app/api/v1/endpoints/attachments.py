@@ -37,3 +37,21 @@ async def delete_attachment(
     _: User = Depends(get_current_user),
 ):
     await AttachmentService(db).delete(attachment_id)
+
+
+@router.post("/{attachment_id}/kitchen-sent", response_model=AttachmentResponse)
+async def mark_kitchen_sent(
+    attachment_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    return await AttachmentService(db).mark_kitchen_sent(attachment_id)
+
+
+@router.delete("/{attachment_id}/kitchen-sent", response_model=AttachmentResponse)
+async def reset_kitchen_sent(
+    attachment_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    return await AttachmentService(db).reset_kitchen_sent(attachment_id)

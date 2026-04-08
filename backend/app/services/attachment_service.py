@@ -1,6 +1,7 @@
 import os
 import uuid
 import aiofiles
+from datetime import datetime, timezone
 from fastapi import HTTPException, UploadFile
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -103,3 +104,21 @@ class AttachmentService:
         if os.path.exists(att.file_path):
             os.remove(att.file_path)
         await self.repo.delete(att)
+
+    async def mark_kitchen_sent(self, attachment_id: int) -> AttachmentResponse:
+        att = await self.repo.get_by_id(attachment_id)
+        if not att:
+            raise HTTPException(status_code=404, detail="Attachment not found")
+        att.kitchen_sent_at = datetime.now(timezone.utc)
+        await self.repo.db.flush()
+        await self.repo.db.refresh(att)
+        return AttachmentResponse.model_validate(att)
+
+    async def reset_kitchen_sent(self, attachment_id: int) -> AttachmentResponse:
+        att = await self.repo.get_by_id(attachment_id)
+        if not att:
+            raise HTTPException(status_code=404, detail="Attachment not found")
+        att.kitchen_sent_at = None
+        await self.repo.db.flush()
+        await self.repo.db.refresh(att)
+        return AttachmentResponse.model_validate(att)

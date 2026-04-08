@@ -122,4 +122,12 @@ export const attachmentsApi = {
   delete: async (id) => {
     await api.delete(`/attachments/${id}`)
   },
+  markKitchenSent: async (id) => {
+    const { data } = await api.post(`/attachments/${id}/kitchen-sent`)
+    return data
+  },
+  resetKitchenSent: async (id) => {
+    const { data } = await api.delete(`/attachments/${id}/kitchen-sent`)
+    return data
+  },
 }

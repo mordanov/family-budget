@@ -67,26 +67,3 @@ export async function sendReceiptToKitchen(publicUrl) {
   return receiptRes.json()
 }
 
-// ── localStorage helpers ──────────────────────────────────────────────────────
-
-const SENT_KEY = 'kitchen_sent_attachment_ids'
-
-export function markAttachmentSent(attachmentId) {
-  const sent = getSentIds()
-  if (!sent.includes(attachmentId)) {
-    sent.push(attachmentId)
-    localStorage.setItem(SENT_KEY, JSON.stringify(sent))
-  }
-}
-
-export function isAttachmentSent(attachmentId) {
-  return getSentIds().includes(attachmentId)
-}
-
-function getSentIds() {
-  try {
-    return JSON.parse(localStorage.getItem(SENT_KEY) || '[]')
-  } catch {
-    return []
-  }
-}
