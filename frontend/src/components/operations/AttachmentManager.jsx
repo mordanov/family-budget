@@ -37,7 +37,7 @@ export default function AttachmentManager({ operationId }) {
         fetched.forEach((item) => {
           if (item.kitchen_sent_at) preloaded[item.id] = 'sent'
         })
-        setKitchenState((prev) => ({ ...prev, ...preloaded }))
+        setKitchenState(preloaded)
       }
     } catch (e) {
       setError(apiError(e))
