@@ -8,6 +8,7 @@ const NAV = [
   { to: '/operations', icon: '↕', labelKey: 'navOperations' },
   { to: '/dashboard', icon: '⬛', labelKey: 'navDashboard' },
   { to: '/reports', icon: '📊', labelKey: 'navReports' },
+  { to: '/forecast', icon: '🔮', labelKey: 'navForecast' },
   { to: '/balances', icon: '⚖', labelKey: 'navBalances' },
   { to: '/settings', icon: '⚙', labelKey: 'navSettings' },
 ]

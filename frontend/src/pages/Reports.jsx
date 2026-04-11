@@ -45,21 +45,17 @@ export default function ReportsPage() {
   const [dateFrom, setDateFrom] = useState(prev.date_from.slice(0,10))
   const [dateTo, setDateTo]     = useState(prev.date_to.slice(0,10))
   const [report, setReport]     = useState(null)
-  const [forecast, setForecast] = useState(null)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
 
   const load = async () => {
     setLoading(true); setError(null)
     try {
-      const [r, f] = await Promise.all([
-        reportsApi.get({
-          date_from: fromZonedTime(new Date(`${dateFrom}T00:00:00`), timezone).toISOString(),
-          date_to:   fromZonedTime(new Date(`${dateTo}T23:59:59`), timezone).toISOString(),
-        }),
-        reportsApi.forecast(),
-      ])
-      setReport(r); setForecast(f)
+      const r = await reportsApi.get({
+        date_from: fromZonedTime(new Date(`${dateFrom}T00:00:00`), timezone).toISOString(),
+        date_to:   fromZonedTime(new Date(`${dateTo}T23:59:59`), timezone).toISOString(),
+      })
+      setReport(r)
     } catch (e) { setError(apiError(e)) }
     finally { setLoading(false) }
   }
@@ -217,49 +213,6 @@ export default function ReportsPage() {
             />
           </div>
 
-          {/* Forecast */}
-          {forecast && (
-            <Card className={styles.forecastCard}>
-              <h3 className={styles.sectionTitle}>
-                {t('nextMonthForecast')} — {monthName(forecast.month, lang)} {forecast.year}
-              </h3>
-              <div className={styles.forecastKpis}>
-                <div>
-                  <span className={styles.kpiLabel}>{t('estIncome')}</span>
-                  <span className="amount-income">{formatCurrency(forecast.total_estimated_income)}</span>
-                </div>
-                <div>
-                  <span className={styles.kpiLabel}>{t('estExpense')}</span>
-                  <span className="amount-expense">{formatCurrency(forecast.total_estimated_expense)}</span>
-                </div>
-                <div>
-                  <span className={styles.kpiLabel}>{t('estNet')}</span>
-                  <span style={{color: Number(forecast.estimated_net)>=0?'var(--color-income)':'var(--color-expense)'}}>
-                    {formatCurrency(forecast.estimated_net)}
-                  </span>
-                </div>
-              </div>
-              <table className={styles.forecastTable}>
-                <thead>
-                  <tr>
-                    <th>{t('category')}</th><th>{t('type')}</th><th>{t('source')}</th><th>{t('estimated')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {forecast.items.map((item, i) => (
-                    <tr key={i}>
-                      <td>{item.category_name}</td>
-                      <td><span className={`badge ${item.type==='income'?'badge-income':'badge-expense'}`}>{item.type === 'income' ? t('income') : t('expense')}</span></td>
-                      <td className={styles.source}>{item.source === 'recurring' ? t('sourceRecurring') : t('sourceAverage')}</td>
-                      <td className={item.type==='income'?'amount-income':'amount-expense'}>
-                        {item.type==='income'?'+':'-'}{formatCurrency(item.estimated_amount)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Card>
-          )}
         </>
       ) : null}
     </div>

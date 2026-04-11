@@ -102,3 +102,36 @@ class DailyBalanceItem(BaseModel):
 class DailyBalanceResponse(BaseModel):
     items: list[DailyBalanceItem]
 
+
+# ─── Forecast Detailed Schemas ────────────────────────────────────────────────
+
+class MonthlyHistoryItem(BaseModel):
+    year: int
+    month: int
+    expense: Decimal
+
+
+class CategoryForecastItem(BaseModel):
+    category_id: int
+    category_name: str
+    category_icon: str | None
+    category_color: str | None
+    history: list[MonthlyHistoryItem]        # last 3 months of expense
+    current_month_actual: Decimal            # expense so far this month
+    current_month_projected: Decimal         # projected to end of current month
+    next_month_projected: Decimal            # linear regression projection
+    trend_slope: float                       # €/month change (positive = growing)
+
+
+class ForecastDetailedResponse(BaseModel):
+    categories: list[CategoryForecastItem]
+    # Current month
+    current_month_expense_actual: Decimal
+    current_month_expense_projected: Decimal
+    current_month_income_actual: Decimal
+    days_elapsed: int
+    days_in_month: int
+    # Next month totals
+    next_month_projected_expense: Decimal
+    next_month_projected_income: Decimal
+

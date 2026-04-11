@@ -9,6 +9,7 @@ import ReportsPage   from './pages/Reports'
 import BalancesPage  from './pages/Balances'
 import NotFoundPage from './pages/NotFound'
 import SettingsPage from './pages/Settings'
+import ForecastPage from './pages/Forecast'
 
 function RequireAuth({ children }) {
   const { token } = useAuthStore()
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="reports"     element={<ReportsPage />} />
           <Route path="balances"    element={<BalancesPage />} />
           <Route path="settings"    element={<SettingsPage />} />
+          <Route path="forecast"    element={<ForecastPage />} />
           <Route path="categories"  element={<Navigate to="/settings?tab=categories" replace />} />
           <Route path="users"       element={<Navigate to="/settings?tab=users" replace />} />
           <Route path="payment-methods" element={<Navigate to="/settings?tab=payment-methods" replace />} />

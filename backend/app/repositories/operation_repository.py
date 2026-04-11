@@ -226,6 +226,47 @@ class OperationRepository(BaseRepository[Operation]):
         result = await self.db.execute(q)
         return result.all()
 
+    async def get_category_monthly_totals(
+        self, date_from: datetime, date_to: datetime
+    ) -> list:
+        """Returns expense/income totals per category per month."""
+        q = (
+            select(
+                Operation.category_id,
+                Category.name.label("category_name"),
+                Category.color.label("category_color"),
+                Category.icon.label("category_icon"),
+                func.extract("year", Operation.operation_date).label("year"),
+                func.extract("month", Operation.operation_date).label("month"),
+                Operation.type,
+                func.sum(Operation.amount).label("total"),
+            )
+            .join(Category, Operation.category_id == Category.id)
+            .where(
+                and_(
+                    Operation.deleted_at == None,
+                    Operation.operation_date >= date_from,
+                    Operation.operation_date <= date_to,
+                )
+            )
+            .group_by(
+                Operation.category_id,
+                Category.name,
+                Category.color,
+                Category.icon,
+                func.extract("year", Operation.operation_date),
+                func.extract("month", Operation.operation_date),
+                Operation.type,
+            )
+            .order_by(
+                func.extract("year", Operation.operation_date),
+                func.extract("month", Operation.operation_date),
+                Category.name,
+            )
+        )
+        result = await self.db.execute(q)
+        return result.all()
+
     async def get_monthly_trend(
         self, date_from: datetime, date_to: datetime
     ) -> list:

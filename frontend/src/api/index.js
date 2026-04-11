@@ -77,6 +77,10 @@ export const reportsApi = {
     const { data } = await api.get('/reports/forecast', { params })
     return data
   },
+  forecastDetailed: async (params = {}) => {
+    const { data } = await api.get('/reports/forecast-detailed', { params })
+    return data
+  },
   dailyBalance: async (params = {}) => {
     const { data } = await api.get('/reports/balance-daily', { params })
     return data

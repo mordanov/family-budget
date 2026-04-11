@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.report import ReportFilter, ReportResponse, ForecastResponse, DailyBalanceResponse
+from app.schemas.report import ReportFilter, ReportResponse, ForecastResponse, DailyBalanceResponse, ForecastDetailedResponse
 from app.services.report_service import ReportService
 
 
@@ -58,6 +58,15 @@ async def get_forecast(
         else:
             year, month = today.year, today.month + 1
     return await ReportService(db).get_forecast(year, month)
+
+
+@router.get("/forecast-detailed", response_model=ForecastDetailedResponse)
+async def get_forecast_detailed(
+    days_elapsed: int = Query(1, ge=1, le=31),
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    return await ReportService(db).get_forecast_detailed(days_elapsed)
 
 
 @router.get("/balance-daily", response_model=DailyBalanceResponse)
