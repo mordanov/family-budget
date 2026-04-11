@@ -8,6 +8,7 @@ import { balancesApi, reportsApi, operationsApi } from '../api/index'
 import { Card, Spinner, PageHeader, EmptyState } from '../components/ui/index'
 import Modal from '../components/ui/Modal'
 import { useI18n } from '../i18n'
+import { toZonedTime } from 'date-fns-tz'
 import { formatCurrency, formatDate, currentMonthRange, monthName } from '../utils/index'
 import { useTimezone } from '../hooks/index'
 import styles from './Dashboard.module.css'
@@ -86,6 +87,9 @@ export default function DashboardPage() {
     }],
   }
 
+  const dayOfMonth = toZonedTime(new Date(), timezone).getDate()
+  const avgDailyExpense = Number(report?.total_expense || 0) / dayOfMonth
+
   return (
     <div>
       <PageHeader title={t('dashboardTitle')} subtitle={t('dashboardSubtitle')} />
@@ -95,8 +99,7 @@ export default function DashboardPage() {
         <KpiCard label={t('currentBalance')} value={formatCurrency(latest?.closing_balance || 0)} accent="primary" />
         <KpiCard label={t('monthIncome')} value={formatCurrency(report?.total_income || 0)} accent="income" />
         <KpiCard label={t('monthExpense')} value={formatCurrency(report?.total_expense || 0)} accent="expense" />
-        <KpiCard label={t('monthNet')} value={formatCurrency(report?.net_balance || 0)}
-          accent={Number(report?.net_balance || 0) >= 0 ? 'income' : 'expense'} />
+        <KpiCard label={t('avgDailyExpense')} value={formatCurrency(avgDailyExpense)} accent="expense" />
       </div>
 
       {/* Charts row */}
