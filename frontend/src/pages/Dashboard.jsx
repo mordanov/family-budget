@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
   LineElement, PointElement, ArcElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js'
 import { Bar, Line, Doughnut } from 'react-chartjs-2'
-import { balancesApi, reportsApi } from '../api/index'
+import { balancesApi, reportsApi, operationsApi } from '../api/index'
 import { Card, Spinner, PageHeader, EmptyState } from '../components/ui/index'
+import Modal from '../components/ui/Modal'
 import { useI18n } from '../i18n'
-import { formatCurrency, currentMonthRange, monthName } from '../utils/index'
+import { formatCurrency, formatDate, currentMonthRange, monthName } from '../utils/index'
 import { useTimezone } from '../hooks/index'
 import styles from './Dashboard.module.css'
 
@@ -31,8 +32,9 @@ export default function DashboardPage() {
   const [daily, setDaily] = useState([])
   const [loading, setLoading] = useState(true)
 
+  const range = useMemo(() => currentMonthRange(timezone), [timezone])
+
   useEffect(() => {
-    const range = currentMonthRange(timezone)
     Promise.all([
       balancesApi.list(),
       reportsApi.get(range),
@@ -117,7 +119,7 @@ export default function DashboardPage() {
 
       {/* Bottom row: expense by category + by payment method */}
       <div className={styles.bottomRow}>
-        {report && <ExpenseByCategoryCard report={report} t={t} />}
+        {report && <ExpenseByCategoryCard report={report} t={t} range={range} />}
         {report && <PaymentMethodCard report={report} t={t} />}
       </div>
     </div>
@@ -143,7 +145,12 @@ const DONUT_OPTS = {
   cutout: '65%',
 }
 
-function ExpenseByCategoryCard({ report, t }) {
+function ExpenseByCategoryCard({ report, t, range }) {
+  const timezone = useTimezone()
+  const [catModal, setCatModal] = useState(null)
+  const [catOps, setCatOps] = useState([])
+  const [catOpsLoading, setCatOpsLoading] = useState(false)
+
   const expCats = (report.by_category || [])
     .filter((c) => Number(c.total_expense) > 0)
     .sort((a, b) => Number(b.total_expense) - Number(a.total_expense))
@@ -157,6 +164,23 @@ function ExpenseByCategoryCard({ report, t }) {
     }],
   }
 
+  const handleCatClick = async (cat) => {
+    setCatModal(cat)
+    setCatOpsLoading(true)
+    setCatOps([])
+    try {
+      const result = await operationsApi.list({
+        category_id: cat.category_id,
+        date_from: range.date_from,
+        date_to: range.date_to,
+        size: 100,
+      })
+      setCatOps(result.items || [])
+    } finally {
+      setCatOpsLoading(false)
+    }
+  }
+
   return (
     <Card className={styles.expCatCard}>
       <h3 className={styles.chartTitle}>{t('currentMonthByCategory')}</h3>
@@ -168,9 +192,16 @@ function ExpenseByCategoryCard({ report, t }) {
             <Doughnut data={donutData} options={DONUT_OPTS} />
           </div>
           <div className={styles.expCatList}>
-            {expCats.map((cat, i) => (
-              <div key={cat.category_id} className={styles.expCatRow}>
-                <span className={styles.catDot} style={{ background: cat.category_color || COLORS[i % COLORS.length] }} />
+            {expCats.map((cat) => (
+              <div
+                key={cat.category_id}
+                className={styles.expCatRow}
+                onClick={() => handleCatClick(cat)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && handleCatClick(cat)}
+              >
+                <span className={styles.catIcon}>{cat.category_icon || '🏷'}</span>
                 <span className={styles.catName}>{cat.category_name}</span>
                 <span className="amount-expense">-{formatCurrency(cat.total_expense)}</span>
               </div>
@@ -178,6 +209,42 @@ function ExpenseByCategoryCard({ report, t }) {
           </div>
         </div>
       )}
+
+      <Modal
+        open={!!catModal}
+        onClose={() => setCatModal(null)}
+        title={`${catModal?.category_icon || '🏷'} ${catModal?.category_name || ''}`}
+        size="lg"
+      >
+        {catOpsLoading ? (
+          <div className={styles.catOpsLoading}><Spinner size={24} /></div>
+        ) : catOps.length === 0 ? (
+          <EmptyState icon="📭" title={t('noOperations')} />
+        ) : (
+          <table className={styles.catOpsTable}>
+            <thead>
+              <tr>
+                <th>{t('tableDate')}</th>
+                <th>{t('tableDescription')}</th>
+                <th>{t('tableUser')}</th>
+                <th className={styles.catOpsAmount}>{t('tableAmount')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {catOps.map((op) => (
+                <tr key={op.id}>
+                  <td className={styles.catOpsDate}>{formatDate(op.operation_date, timezone)}</td>
+                  <td>{op.description || '—'}</td>
+                  <td>{op.user?.name || '—'}</td>
+                  <td className={`${styles.catOpsAmount} ${op.type === 'expense' ? 'amount-expense' : 'amount-income'}`}>
+                    {op.type === 'expense' ? '-' : '+'}{formatCurrency(op.amount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Modal>
     </Card>
   )
 }

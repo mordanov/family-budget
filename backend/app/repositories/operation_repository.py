@@ -120,6 +120,7 @@ class OperationRepository(BaseRepository[Operation]):
                 Operation.category_id,
                 Category.name.label("category_name"),
                 Category.color.label("category_color"),
+                Category.icon.label("category_icon"),
                 Operation.type,
                 func.sum(Operation.amount).label("total"),
                 func.count(Operation.id).label("count"),
@@ -132,7 +133,7 @@ class OperationRepository(BaseRepository[Operation]):
                     Operation.operation_date <= date_to,
                 )
             )
-            .group_by(Operation.category_id, Category.name, Category.color, Operation.type)
+            .group_by(Operation.category_id, Category.name, Category.color, Category.icon, Operation.type)
             .order_by(Category.name)
         )
         result = await self.db.execute(q)

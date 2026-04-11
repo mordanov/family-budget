@@ -35,6 +35,7 @@ class CategorySummary(BaseModel):
     category_id: int
     category_name: str
     category_color: str | None
+    category_icon: str | None
     total_income: Decimal
     total_expense: Decimal
     count: int

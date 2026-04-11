@@ -32,6 +32,7 @@ class ReportService:
             c = cat_map[row.category_id]
             c["category_name"] = row.category_name
             c["category_color"] = row.category_color
+            c["category_icon"] = row.category_icon
             if row.type.value == "income":
                 c["total_income"] += row.total or Decimal("0")
             else:
