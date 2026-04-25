@@ -53,7 +53,7 @@ describe('LoginPage', () => {
     await userEvent.type(screen.getByPlaceholderText(/family\.local/i), 'user1@family.local')
     await userEvent.type(screen.getByPlaceholderText(/••/), 'password1')
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
-    await waitFor(() => expect(mockLogin).toHaveBeenCalledWith('user1@family.local', 'password1'))
+    await waitFor(() => expect(mockLogin).toHaveBeenCalledWith('user1@family.local', 'password1', false))
   })
 
   it('navigates to /operations on successful login', async () => {
