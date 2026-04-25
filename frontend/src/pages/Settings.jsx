@@ -4,6 +4,7 @@ import { Button, Card, PageHeader, Alert } from '../components/ui/index'
 import { useI18n } from '../i18n'
 import { useAuthStore } from '../store/authStore'
 import { usersApi } from '../api/index'
+import { usePaymentMethods } from '../hooks/index'
 import { apiError } from '../utils/index'
 import CategoriesPage from './Categories'
 import UsersPage from './Users'
@@ -47,16 +48,23 @@ function ProfileTab() {
   const user = useAuthStore((s) => s.user)
   const updateUser = useAuthStore((s) => s.updateUser)
   const [timezone, setTimezone] = useState(user?.timezone || 'UTC')
+  const [defaultPaymentMethodId, setDefaultPaymentMethodId] = useState(
+    user?.default_payment_method_id ?? ''
+  )
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState(null)
+  const { paymentMethods } = usePaymentMethods()
 
   const handleSave = async () => {
     setSaving(true)
     setSuccess(false)
     setError(null)
     try {
-      const updated = await usersApi.updateMe(user.id, { timezone })
+      const updated = await usersApi.updateMe(user.id, {
+        timezone,
+        default_payment_method_id: defaultPaymentMethodId === '' ? null : Number(defaultPaymentMethodId),
+      })
       updateUser(updated)
       setSuccess(true)
     } catch (e) {
@@ -68,7 +76,7 @@ function ProfileTab() {
 
   return (
     <Card style={{ maxWidth: 480 }}>
-      {success && <Alert type="success">{t('timezoneSaved')}</Alert>}
+      {success && <Alert type="success">{t('profileSaved')}</Alert>}
       {error && <Alert type="error">{error}</Alert>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         <label>
@@ -80,6 +88,19 @@ function ProfileTab() {
           >
             {TIMEZONES.map((tz) => (
               <option key={tz} value={tz}>{tz}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <strong>{t('defaultPaymentMethodLabel')}</strong>
+          <select
+            value={defaultPaymentMethodId}
+            onChange={(e) => setDefaultPaymentMethodId(e.target.value)}
+            style={{ display: 'block', width: '100%', marginTop: '0.25rem' }}
+          >
+            <option value="">{t('defaultPaymentMethodNone')}</option>
+            {paymentMethods.map((pm) => (
+              <option key={pm.id} value={pm.id}>{pm.name}</option>
             ))}
           </select>
         </label>

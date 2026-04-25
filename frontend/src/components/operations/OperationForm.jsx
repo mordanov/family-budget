@@ -39,6 +39,7 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
   const { t } = useI18n()
   const timezone = useTimezone()
   const currentUserId = useAuthStore((s) => s.user?.id)
+  const defaultPaymentMethodId = useAuthStore((s) => s.user?.default_payment_method_id ?? null)
   const fileInputRef = useRef(null)
   const [form, setForm] = useState(() => normalizeInitial(initial, timezone))
   const [selectedFiles, setSelectedFiles] = useState([])
@@ -66,10 +67,13 @@ export default function OperationForm({ initial = {}, onSubmit, onCancel, loadin
       setForm((f) => ({ ...f, user_id: defaultUser?.id || '' }))
     }
     if (paymentMethods.length && !form.payment_method_id) {
-      const preferred = paymentMethods.find((item) => item.key === 'card') || paymentMethods[0]
+      const preferred =
+        (defaultPaymentMethodId && paymentMethods.find((item) => item.id === defaultPaymentMethodId)) ||
+        paymentMethods.find((item) => item.key === 'card') ||
+        paymentMethods[0]
       setForm((f) => ({ ...f, payment_method_id: preferred?.id || '' }))
     }
-  }, [categories, users, paymentMethods, form.category_id, form.user_id, form.payment_method_id, currentUserId])
+  }, [categories, users, paymentMethods, form.category_id, form.user_id, form.payment_method_id, currentUserId, defaultPaymentMethodId])
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }))
 

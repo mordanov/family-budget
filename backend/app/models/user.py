@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
-from sqlalchemy import String, Boolean, DateTime
+from typing import Optional
+from sqlalchemy import String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
@@ -13,6 +14,9 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     timezone: Mapped[str] = mapped_column(String(50), default="UTC", nullable=False)
+    default_payment_method_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("payment_methods.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

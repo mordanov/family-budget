@@ -17,12 +17,14 @@ class UserUpdate(BaseModel):
     password: str | None = Field(None, min_length=6)
     is_active: bool | None = None
     timezone: str | None = Field(None, min_length=1, max_length=50)
+    default_payment_method_id: int | None = None
 
 
 class UserResponse(UserBase):
     id: int
     is_active: bool
     timezone: str
+    default_payment_method_id: int | None = None
     created_at: datetime
     updated_at: datetime
 

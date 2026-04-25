@@ -54,6 +54,8 @@ class UserService:
             except zoneinfo.ZoneInfoNotFoundError:
                 raise HTTPException(status_code=400, detail=f"Unknown timezone: {data.timezone}")
             user.timezone = data.timezone
+        if "default_payment_method_id" in data.model_fields_set:
+            user.default_payment_method_id = data.default_payment_method_id
         await self.repo.db.flush()
         await self.repo.db.refresh(user)
         return UserResponse.model_validate(user)

@@ -212,6 +212,9 @@ const DICT = {
     timezoneLabel: 'Time Zone',
     timezoneSaved: 'Time zone saved',
     timezoneSaveError: 'Failed to save time zone',
+    defaultPaymentMethodLabel: 'Default Payment Method',
+    defaultPaymentMethodNone: '— Not set —',
+    profileSaved: 'Profile saved',
   },
   ru: {
     appName: 'Семейный бюджет',
@@ -424,6 +427,9 @@ const DICT = {
     timezoneLabel: 'Часовой пояс',
     timezoneSaved: 'Часовой пояс сохранён',
     timezoneSaveError: 'Не удалось сохранить часовой пояс',
+    defaultPaymentMethodLabel: 'Способ оплаты по умолчанию',
+    defaultPaymentMethodNone: '— Не задан —',
+    profileSaved: 'Профиль сохранён',
   },
 }
 
