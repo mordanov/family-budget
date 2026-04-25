@@ -26,7 +26,7 @@
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 13px; color: var(--color-text-muted); font-weight: 500; }
 .submitBtn { width: 100%; justify-content: center; margin-top: 4px; }
-.rememberRow { display: flex; align-self: flex-start; align-items: center; gap: 0.5rem; font-size: 13px; cursor: pointer; padding: 2px 0; }
+.rememberRow { display: flex; align-items: center; gap: 0.5rem; font-size: 13px; cursor: pointer; padding: 2px 0; margin-left: 0; }
 .langRow { display: flex; justify-content: center; gap: 8px; padding-top: 12px; border-top: 1px solid var(--color-border); }
 .langBtn { background: none; border: none; cursor: pointer; font-size: 13px; color: var(--color-text-muted); padding: 2px 6px; border-radius: 4px; }
 .langBtn:hover { color: var(--color-text); background: var(--color-surface-2); }
