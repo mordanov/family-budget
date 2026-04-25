@@ -68,7 +68,7 @@ export default function LoginPage() {
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
             />
-            {t('rememberMe')}
+            <span>{t('rememberMe')}</span>
           </label>
           <Button type="submit" size="lg" loading={loading} className={styles.submitBtn}>
             {t('signIn')}
