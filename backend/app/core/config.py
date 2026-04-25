@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "supersecretkey-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REMEMBER_ME_EXPIRE_DAYS: int = 30
     ROBOT_API_TOKENS: str = ""
 
     # App

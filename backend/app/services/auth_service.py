@@ -1,6 +1,8 @@
+from datetime import timedelta
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserCreate, Token, UserResponse
@@ -10,7 +12,7 @@ class AuthService:
     def __init__(self, db: AsyncSession):
         self.repo = UserRepository(db)
 
-    async def login(self, login: str, password: str) -> Token:
+    async def login(self, login: str, password: str, remember_me: bool = False) -> Token:
         user = await self.repo.get_by_login_identifier(login)
         if not user or not verify_password(password, user.hashed_password):
             raise HTTPException(
@@ -20,7 +22,8 @@ class AuthService:
             )
         if not user.is_active:
             raise HTTPException(status_code=400, detail="Inactive user")
-        token = create_access_token({"sub": str(user.id)})
+        expires = timedelta(days=settings.REMEMBER_ME_EXPIRE_DAYS) if remember_me else None
+        token = create_access_token({"sub": str(user.id)}, expires_delta=expires)
         return Token(access_token=token, user=UserResponse.model_validate(user))
 
     async def register(self, data: UserCreate) -> UserResponse:

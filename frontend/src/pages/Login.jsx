@@ -8,6 +8,9 @@ import styles from './Login.module.css'
 export default function LoginPage() {
   const [loginValue, setLoginValue] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(
+    () => localStorage.getItem('remember_me') === 'true'
+  )
   const { t } = useI18n()
   const { login, loading, error, clearError } = useAuthStore()
   const navigate = useNavigate()
@@ -15,8 +18,9 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     clearError()
+    localStorage.setItem('remember_me', String(rememberMe))
     try {
-      await login(loginValue, password)
+      await login(loginValue, password, rememberMe)
       navigate('/operations')
     } catch {}
   }
@@ -58,6 +62,14 @@ export default function LoginPage() {
               required
             />
           </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '13px', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            {t('rememberMe')}
+          </label>
           <Button type="submit" size="lg" loading={loading} className={styles.submitBtn}>
             {t('signIn')}
           </Button>

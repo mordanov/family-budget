@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { clearRememberCookies } from '../utils/cookies'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
@@ -19,6 +20,7 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('access_token')
       localStorage.removeItem('user')
+      clearRememberCookies()
       window.location.href = '/login'
     }
     return Promise.reject(err)
