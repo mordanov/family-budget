@@ -26,9 +26,25 @@
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 13px; color: var(--color-text-muted); font-weight: 500; }
 .submitBtn { width: 100%; justify-content: center; margin-top: 4px; }
-.rememberRow { display: flex; align-items: center; width: 100%; gap: 0.5rem; font-size: 13px; cursor: pointer; padding: 2px 0; }
-.rememberRow input[type="checkbox"] { flex-shrink: 0; }
-.rememberRow span { flex: 1; }
+.rememberRow {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 0;
+}
+.rememberRow input[type="checkbox"] {
+  box-sizing: border-box;
+  flex: 0 0 1rem;
+  width: 1rem;
+  height: 1rem;
+  margin: 0 0.5rem 0 0;
+}
+.rememberRow span {
+  flex: 1;
+  min-width: 0;
+}
 .langRow { display: flex; justify-content: center; gap: 8px; padding-top: 12px; border-top: 1px solid var(--color-border); }
 .langBtn { background: none; border: none; cursor: pointer; font-size: 13px; color: var(--color-text-muted); padding: 2px 6px; border-radius: 4px; }
 .langBtn:hover { color: var(--color-text); background: var(--color-surface-2); }
@@ -69,4 +85,3 @@
     font-size: 13px;
   }
 }
-
