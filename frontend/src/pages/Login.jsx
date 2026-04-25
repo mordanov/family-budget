@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(
     () => localStorage.getItem('remember_me') === 'true'
   )
-  const { t } = useI18n()
+  const { t, lang, switchLanguage } = useI18n()
   const { login, loading, error, clearError } = useAuthStore()
   const navigate = useNavigate()
 
@@ -62,7 +62,7 @@ export default function LoginPage() {
               required
             />
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '13px', cursor: 'pointer' }}>
+          <label className={styles.rememberRow}>
             <input
               type="checkbox"
               checked={rememberMe}
@@ -78,6 +78,18 @@ export default function LoginPage() {
         <p className={styles.hint}>
           {t('defaultUsersHint')}: <code>user1@family.local</code> / <code>password1</code>
         </p>
+        <div className={styles.langRow}>
+          {['en', 'ru'].map((l) => (
+            <button
+              key={l}
+              type="button"
+              className={`${styles.langBtn} ${lang === l ? styles.langBtnActive : ''}`}
+              onClick={() => switchLanguage(l)}
+            >
+              {l.toUpperCase()}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
