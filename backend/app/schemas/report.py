@@ -51,6 +51,7 @@ class UserSummary(BaseModel):
 
 class PaymentTypeSummary(BaseModel):
     payment_type: str
+    payment_method_id: int | None = None
     payment_method_name: str | None = None
     total_income: Decimal
     total_expense: Decimal

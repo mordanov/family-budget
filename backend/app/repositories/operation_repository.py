@@ -166,6 +166,7 @@ class OperationRepository(BaseRepository[Operation]):
     ) -> list:
         q = (
             select(
+                PaymentMethod.id.label("payment_method_id"),
                 PaymentMethod.key.label("payment_method_key"),
                 PaymentMethod.name.label("payment_method_name"),
                 Operation.type,
@@ -180,7 +181,7 @@ class OperationRepository(BaseRepository[Operation]):
                     Operation.operation_date <= date_to,
                 )
             )
-            .group_by(PaymentMethod.key, PaymentMethod.name, Operation.type)
+            .group_by(PaymentMethod.id, PaymentMethod.key, PaymentMethod.name, Operation.type)
         )
         result = await self.db.execute(q)
         return result.all()

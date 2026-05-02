@@ -66,6 +66,7 @@ class ReportService:
         })
         for row in by_pt_rows:
             pt = pt_map[row.payment_method_key]
+            pt["payment_method_id"] = row.payment_method_id
             pt["payment_method_name"] = row.payment_method_name
             if row.type.value == "income":
                 pt["total_income"] += row.total or Decimal("0")

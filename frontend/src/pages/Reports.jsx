@@ -229,7 +229,7 @@ export default function ReportsPage() {
               title={t('byPaymentType')}
               rows={report.by_payment_type}
               columns={[t('payment'), t('income'), t('expense'), t('count')]}
-              onRowClick={r => setDrilldown({ title: r.payment_method_name || r.payment_type.replace('_', ' '), filter: { payment_type: r.payment_type } })}
+              onRowClick={r => setDrilldown({ title: r.payment_method_name || r.payment_type.replace('_', ' '), filter: r.payment_method_id ? { payment_method_id: r.payment_method_id } : { payment_type: r.payment_type } })}
               renderRow={r => [
                 <span key="p" className={styles.ptLabel}>{r.payment_method_name || r.payment_type.replace('_',' ')}</span>,
                 <span key="i" className="amount-income">{formatCurrency(r.total_income)}</span>,
