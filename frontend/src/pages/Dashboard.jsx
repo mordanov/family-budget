@@ -123,7 +123,7 @@ export default function DashboardPage() {
       {/* Bottom row: expense by category + by payment method */}
       <div className={styles.bottomRow}>
         {report && <ExpenseByCategoryCard report={report} t={t} range={range} />}
-        {report && <PaymentMethodCard report={report} t={t} />}
+        {report && <PaymentMethodCard report={report} t={t} range={range} />}
       </div>
     </div>
   )
@@ -252,10 +252,35 @@ function ExpenseByCategoryCard({ report, t, range }) {
   )
 }
 
-function PaymentMethodCard({ report, t }) {
+function PaymentMethodCard({ report, t, range }) {
+  const timezone = useTimezone()
+  const [pmModal, setPmModal] = useState(null)
+  const [pmOps, setPmOps] = useState([])
+  const [pmOpsLoading, setPmOpsLoading] = useState(false)
+
   const rows = (report.by_payment_type || [])
     .filter((p) => Number(p.total_income) > 0 || Number(p.total_expense) > 0)
     .sort((a, b) => Number(b.total_expense) - Number(a.total_expense))
+
+  const handlePmClick = async (p) => {
+    setPmModal(p)
+    setPmOpsLoading(true)
+    setPmOps([])
+    try {
+      const filter = p.payment_method_id
+        ? { payment_method_id: p.payment_method_id }
+        : { payment_type: p.payment_type }
+      const result = await operationsApi.list({
+        ...filter,
+        date_from: range.date_from,
+        date_to: range.date_to,
+        size: 100,
+      })
+      setPmOps(result.items || [])
+    } finally {
+      setPmOpsLoading(false)
+    }
+  }
 
   return (
     <Card>
@@ -274,7 +299,13 @@ function PaymentMethodCard({ report, t }) {
           </thead>
           <tbody>
             {rows.map((p) => (
-              <tr key={p.payment_type}>
+              <tr
+                key={p.payment_type}
+                onClick={() => handlePmClick(p)}
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-surface-2)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = '' }}
+              >
                 <td>{p.payment_method_name}</td>
                 <td className={`${styles.pmNum} amount-income`}>
                   {Number(p.total_income) > 0 ? `+${formatCurrency(p.total_income)}` : '—'}
@@ -288,6 +319,44 @@ function PaymentMethodCard({ report, t }) {
           </tbody>
         </table>
       )}
+
+      <Modal
+        open={!!pmModal}
+        onClose={() => setPmModal(null)}
+        title={pmModal?.payment_method_name || pmModal?.payment_type?.replace('_', ' ') || ''}
+        size="lg"
+      >
+        {pmOpsLoading ? (
+          <div className={styles.catOpsLoading}><Spinner size={24} /></div>
+        ) : pmOps.length === 0 ? (
+          <EmptyState icon="📭" title={t('noOperations')} />
+        ) : (
+          <table className={styles.catOpsTable}>
+            <thead>
+              <tr>
+                <th>{t('tableDate')}</th>
+                <th>{t('tableCategory')}</th>
+                <th>{t('tableDescription')}</th>
+                <th>{t('tableUser')}</th>
+                <th className={styles.catOpsAmount}>{t('tableAmount')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pmOps.map((op) => (
+                <tr key={op.id}>
+                  <td className={styles.catOpsDate}>{formatDate(op.operation_date, timezone)}</td>
+                  <td>{op.category?.name || '—'}</td>
+                  <td>{op.description || '—'}</td>
+                  <td>{op.user?.name || '—'}</td>
+                  <td className={`${styles.catOpsAmount} ${op.type === 'expense' ? 'amount-expense' : 'amount-income'}`}>
+                    {op.type === 'expense' ? '-' : '+'}{formatCurrency(op.amount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Modal>
     </Card>
   )
 }
