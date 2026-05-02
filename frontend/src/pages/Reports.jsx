@@ -32,7 +32,22 @@ const BAR_OPTS = {
   },
 }
 
-const DONUT_OPTS = { ...CHART_DEFAULTS, cutout: '65%' }
+const makeDonutOpts = (formatFn) => ({
+  ...CHART_DEFAULTS,
+  cutout: '65%',
+  plugins: {
+    ...CHART_DEFAULTS.plugins,
+    tooltip: {
+      callbacks: {
+        label: (ctx) => {
+          const total = ctx.dataset.data.reduce((a, b) => a + b, 0)
+          const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : '0.0'
+          return ` ${formatFn(ctx.raw)} (${pct}%)`
+        },
+      },
+    },
+  },
+})
 
 const COLORS = [
   '#6c8fff','#3ecf8e','#f5633a','#f5a623','#a78bfa',
@@ -75,8 +90,12 @@ export default function ReportsPage() {
 
   // Chart data
   const expenseByCategory = (report?.by_category || []).filter(c => Number(c.total_expense) > 0)
+  const totalExpense = expenseByCategory.reduce((sum, c) => sum + Number(c.total_expense), 0)
   const donutData = {
-    labels: expenseByCategory.map(c => c.category_name),
+    labels: expenseByCategory.map(c => {
+      const pct = totalExpense > 0 ? ((Number(c.total_expense) / totalExpense) * 100).toFixed(1) : '0.0'
+      return `${c.category_name} · ${pct}%`
+    }),
     datasets: [{
       data: expenseByCategory.map(c => Number(c.total_expense)),
       backgroundColor: expenseByCategory.map((c, i) => c.category_color || COLORS[i % COLORS.length]),
@@ -84,6 +103,7 @@ export default function ReportsPage() {
       hoverOffset: 6,
     }],
   }
+  const donutOpts = makeDonutOpts(formatCurrency)
 
   const trendLabels = (report?.monthly_trend || []).map(
     t => `${monthName(t.month, lang).slice(0,3)} ${t.year}`
@@ -170,7 +190,7 @@ export default function ReportsPage() {
             <Card>
               <h3 className={styles.sectionTitle}>{t('expensesByCategory')}</h3>
               {expenseByCategory.length > 0
-                ? <div className={styles.donutWrap}><Doughnut data={donutData} options={DONUT_OPTS} /></div>
+                ? <div className={styles.donutWrap}><Doughnut data={donutData} options={donutOpts} /></div>
                 : <EmptyState icon="🏷" title={t('noExpenseData')} />
               }
             </Card>
