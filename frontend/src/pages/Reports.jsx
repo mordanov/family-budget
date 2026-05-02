@@ -64,8 +64,8 @@ export default function ReportsPage() {
 
   const setPreset = (months) => {
     const nowZoned = toZonedTime(new Date(), timezone)
-    const to   = endOfMonth(subMonths(nowZoned, months - 1))
-    const from = startOfMonth(subMonths(nowZoned, months - 1))
+    const to   = endOfMonth(subMonths(nowZoned, 1))
+    const from = startOfMonth(subMonths(nowZoned, months))
     setDateFrom(format(from, 'yyyy-MM-dd'))
     setDateTo(format(to, 'yyyy-MM-dd'))
   }
