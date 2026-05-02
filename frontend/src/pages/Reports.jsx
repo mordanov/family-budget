@@ -4,10 +4,11 @@ import {
   BarElement, Title, Tooltip, Legend,
 } from 'chart.js'
 import { Doughnut, Bar } from 'react-chartjs-2'
-import { reportsApi } from '../api/index'
+import { reportsApi, operationsApi } from '../api/index'
 import { Card, PageHeader, Spinner, EmptyState, Button, Alert } from '../components/ui/index'
+import Modal from '../components/ui/Modal'
 import { useI18n } from '../i18n'
-import { formatCurrency, prevMonthRange, monthName, apiError } from '../utils/index'
+import { formatCurrency, formatDateTime, prevMonthRange, monthName, apiError } from '../utils/index'
 import { useTimezone } from '../hooks/index'
 import { fromZonedTime, toZonedTime } from 'date-fns-tz'
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns'
@@ -47,6 +48,8 @@ export default function ReportsPage() {
   const [report, setReport]     = useState(null)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
+  const [drilldown, setDrilldown] = useState(null)
+  // drilldown = { title, filter: { category_id } | { user_id } | { payment_type } }
 
   const load = async () => {
     setLoading(true); setError(null)
@@ -179,6 +182,7 @@ export default function ReportsPage() {
               title={t('byCategory')}
               rows={report.by_category}
               columns={[t('category'), t('income'), t('expense'), t('count')]}
+              onRowClick={r => setDrilldown({ title: r.category_name, filter: { category_id: r.category_id } })}
               renderRow={r => [
                 <span key="n" className={styles.catName}>
                   <span className={styles.dot} style={{background: r.category_color || '#9E9E9E'}} />
@@ -193,6 +197,7 @@ export default function ReportsPage() {
               title={t('byUser')}
               rows={report.by_user}
               columns={[t('user'), t('income'), t('expense'), t('count')]}
+              onRowClick={r => setDrilldown({ title: r.user_name, filter: { user_id: r.user_id } })}
               renderRow={r => [
                 r.user_name,
                 <span key="i" className="amount-income">{formatCurrency(r.total_income)}</span>,
@@ -204,6 +209,7 @@ export default function ReportsPage() {
               title={t('byPaymentType')}
               rows={report.by_payment_type}
               columns={[t('payment'), t('income'), t('expense'), t('count')]}
+              onRowClick={r => setDrilldown({ title: r.payment_method_name || r.payment_type.replace('_', ' '), filter: { payment_type: r.payment_type } })}
               renderRow={r => [
                 <span key="p" className={styles.ptLabel}>{r.payment_method_name || r.payment_type.replace('_',' ')}</span>,
                 <span key="i" className="amount-income">{formatCurrency(r.total_income)}</span>,
@@ -215,12 +221,25 @@ export default function ReportsPage() {
 
         </>
       ) : null}
+
+      {drilldown && (
+        <DrilldownModal
+          open={!!drilldown}
+          onClose={() => setDrilldown(null)}
+          title={drilldown.title}
+          filter={drilldown.filter}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          timezone={timezone}
+        />
+      )}
     </div>
   )
 }
 
-function BreakdownTable({ title, rows, columns, renderRow }) {
+function BreakdownTable({ title, rows, columns, renderRow, onRowClick }) {
   const { t } = useI18n()
+  const clickable = !!onRowClick
   return (
     <Card>
       <h3 style={{fontSize:'14px',fontWeight:600,marginBottom:'14px'}}>{title}</h3>
@@ -239,7 +258,17 @@ function BreakdownTable({ title, rows, columns, renderRow }) {
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={i} style={{borderBottom:'1px solid var(--color-border)'}}>
+              <tr
+                key={i}
+                onClick={clickable ? () => onRowClick(r) : undefined}
+                style={{
+                  borderBottom:'1px solid var(--color-border)',
+                  cursor: clickable ? 'pointer' : undefined,
+                  transition: 'background 0.12s',
+                }}
+                onMouseEnter={e => { if (clickable) e.currentTarget.style.background = 'var(--color-surface-2)' }}
+                onMouseLeave={e => { if (clickable) e.currentTarget.style.background = '' }}
+              >
                 {renderRow(r).map((cell, j) => (
                   <td key={j} style={{padding:'8px 8px'}}>{cell}</td>
                 ))}
@@ -251,5 +280,106 @@ function BreakdownTable({ title, rows, columns, renderRow }) {
         <EmptyState icon="📋" title={t('noData')} />
       )}
     </Card>
+  )
+}
+
+const thStyle = {
+  textAlign: 'left', padding: '6px 8px',
+  color: 'var(--color-text-muted)', fontSize: '11px',
+  textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px',
+  borderBottom: '1px solid var(--color-border)',
+}
+const tdStyle = { padding: '8px 8px', borderBottom: '1px solid var(--color-border)' }
+
+function DrilldownModal({ open, onClose, title, filter, dateFrom, dateTo, timezone }) {
+  const { t } = useI18n()
+  const [ops, setOps] = useState({ items: [], total: 0, page: 1, pages: 1 })
+  const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(1)
+
+  useEffect(() => { setPage(1) }, [filter])
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    setLoading(true)
+    operationsApi.list({
+      ...filter,
+      date_from: fromZonedTime(new Date(`${dateFrom}T00:00:00`), timezone).toISOString(),
+      date_to:   fromZonedTime(new Date(`${dateTo}T23:59:59`), timezone).toISOString(),
+      page,
+      size: 15,
+    }).then(r => { if (!cancelled) setOps(r) })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [open, filter, dateFrom, dateTo, timezone, page])
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={`${title} — ${ops.total} ${t('operationsFor')}`}
+      size="lg"
+    >
+      {loading ? (
+        <div style={{display:'flex',justifyContent:'center',padding:32}}><Spinner /></div>
+      ) : ops.items.length === 0 ? (
+        <EmptyState icon="💸" title={t('noOperations')} />
+      ) : (
+        <>
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse',fontSize:'13px'}}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>{t('tableDate')}</th>
+                  <th style={thStyle}>{t('tableAmount')}</th>
+                  <th style={thStyle}>{t('tableCategory')}</th>
+                  <th style={thStyle}>{t('tableUser')}</th>
+                  <th style={thStyle}>{t('tablePayment')}</th>
+                  <th style={thStyle}>{t('tableDescription')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ops.items.map(op => (
+                  <tr key={op.id}>
+                    <td style={tdStyle}>{formatDateTime(op.operation_date, timezone)}</td>
+                    <td style={{...tdStyle, fontFamily:'var(--font-mono)',
+                      color: op.type === 'income' ? 'var(--color-income)' : 'var(--color-expense)'}}>
+                      {op.type === 'income' ? '+' : '-'}{formatCurrency(op.amount)}
+                    </td>
+                    <td style={tdStyle}>
+                      {op.category && (
+                        <span style={{display:'flex',alignItems:'center',gap:6}}>
+                          <span style={{width:8,height:8,borderRadius:'50%',flexShrink:0,display:'inline-block',
+                            background: op.category.color || '#9E9E9E'}} />
+                          {op.category.name}
+                        </span>
+                      )}
+                    </td>
+                    <td style={tdStyle}>{op.user?.name}</td>
+                    <td style={{...tdStyle,color:'var(--color-text-muted)'}}>
+                      {op.payment_method?.name || op.payment_type?.replace('_', ' ')}
+                    </td>
+                    <td style={{...tdStyle,color:'var(--color-text-muted)'}}>{op.description || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {ops.pages > 1 && (
+            <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:12,paddingTop:16}}>
+              <Button size="sm" variant="secondary" disabled={page <= 1}
+                onClick={() => setPage(p => p - 1)}>{`← ${t('prev')}`}</Button>
+              <span style={{fontSize:13,color:'var(--color-text-muted)'}}>
+                {t('pageOf', { page, pages: ops.pages })}
+              </span>
+              <Button size="sm" variant="secondary" disabled={page >= ops.pages}
+                onClick={() => setPage(p => p + 1)}>{`${t('next')} →`}</Button>
+            </div>
+          )}
+        </>
+      )}
+    </Modal>
   )
 }
